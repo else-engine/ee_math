@@ -12,11 +12,30 @@
 #include <typeinfo>
 
 #include "vec.hpp"
+#include "generators.hpp"
 
 #define EE_MATRIX_COLUMN_MAJOR 1
 
 namespace EE {
 namespace math {
+
+/**
+ *  1  2  3  4
+ *  5  6  7  8
+ *  9 10 11 12
+ * 13 14 15 16
+ *
+ * row-major layout :
+ *      1  2  3  4    5  6  7  8    9 10 11 12   13 14 15 16
+ * r [  0          |  1          |  2          |  3          ]
+ * c [  0  1  2  3 |  0  1  2  3 |  0  1  2  3 |  0  1  2  3 ]
+ *
+ * column-major layout :
+ *      1  5  9 13    2  6 10 14    3  7 11 15    4  8 12 16
+ * r [  0  1  2  3 |  0  1  2  3 |  0  1  2  3 |  0  1  2  3 ]
+ * c [  0          |  1          |  2          |  3          ]
+ *
+ */
 
 inline constexpr auto mat_rc_to_i(const vec<std::size_t, 2>& coords,
                                   const vec<std::size_t, 2>& size) {
@@ -24,6 +43,33 @@ inline constexpr auto mat_rc_to_i(const vec<std::size_t, 2>& coords,
     return coords(0) + size(0) * coords(1);
 #else
     return coords(0) * size(1) + coords(1);
+#endif
+}
+
+inline constexpr auto mat_i_to_r(
+    std::size_t i, const vec<std::size_t, 2>& size) {
+#if EE_MATRIX_COLUMN_MAJOR
+    return i % size(0);
+#else
+    return i / size(1);
+#endif
+}
+
+inline constexpr auto mat_i_to_c(
+    std::size_t i, const vec<std::size_t, 2>& size) {
+#if EE_MATRIX_COLUMN_MAJOR
+    return i / size(0);
+#else
+    return i % size(1);
+#endif
+}
+
+inline constexpr auto mat_i_to_rc(
+    std::size_t i, const vec<std::size_t, 2>& size) {
+#if EE_MATRIX_COLUMN_MAJOR
+    return make_vec(i % size(0), i / size(0));
+#else
+    return make_vec(i / size(1), i % size(1));
 #endif
 }
 
