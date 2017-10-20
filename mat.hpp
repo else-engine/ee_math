@@ -16,7 +16,7 @@
 
 #define EE_MATRIX_COLUMN_MAJOR 1
 
-namespace EE {
+namespace ee {
 namespace math {
 
 /**
@@ -134,4 +134,4 @@ std::ostream& operator<<(std::ostream& output, const mat<T, R, C>& m) {
 }
 
 } // namespace math
-} // namespace EE
+} // namespace ee

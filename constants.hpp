@@ -13,7 +13,7 @@
 #include "quat.hpp"
 #include "vec.hpp"
 
-namespace EE {
+namespace ee {
 namespace math {
 
 /**
@@ -103,4 +103,4 @@ constexpr auto c_identity<quat<T>> =
 math::quat<T>{T{0L}, T{0L}, T{0L}, T{1L}};
 
 } // namespace math
-} // namespace EE
+} // namespace ee

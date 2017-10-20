@@ -7,7 +7,7 @@
 
 #pragma once
 
-namespace EE {
+namespace ee {
 namespace math {
 
 /**
@@ -36,4 +36,4 @@ constexpr const auto cend(const T& d) noexcept {
 }
 
 } // namespace math
-} // namespace EE
+} // namespace ee

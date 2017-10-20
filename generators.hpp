@@ -15,7 +15,7 @@
 #include "vec.hpp"
 #include "mat.hpp"
 
-namespace EE {
+namespace ee {
 namespace math {
 
 using tutil::eif;
@@ -114,4 +114,4 @@ constexpr auto as(F&& f, Rs&&... ts) {
 }
 
 } // namespace math
-} // namespace EE
+} // namespace ee

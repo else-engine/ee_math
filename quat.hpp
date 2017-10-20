@@ -11,7 +11,7 @@
 
 #include "vec.hpp"
 
-namespace EE {
+namespace ee {
 namespace math {
 
 /**
@@ -59,4 +59,4 @@ std::ostream& operator<<(std::ostream& output, const quat<T>& q) {
 }
 
 } // namespace math
-} // namespace EE
+} // namespace ee

@@ -11,7 +11,7 @@
 #include <iostream>
 #include <typeinfo>
 
-namespace EE {
+namespace ee {
 namespace math {
 
 /**
@@ -251,4 +251,4 @@ std::ostream& operator<<(std::ostream& output, const vec<T, D>& v) {
 }
 
 } // namespace math
-} // namespace EE
+} // namespace ee
