@@ -17,7 +17,6 @@ namespace ee {
 namespace math {
 
 using tutil::eif;
-using tutil::is_arithmetic;
 
 /**
  * Comparison operators.
@@ -25,29 +24,12 @@ using tutil::is_arithmetic;
 
 /**
  * Equal.
- * mat == mat
+ * For mat, vec and quat.
  */
-template <typename T, std::size_t R, std::size_t C>
-constexpr bool operator==(const mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
-    for (std::size_t r = 0; r < R; ++ r) {
-        for (std::size_t c = 0; c < C; ++ c) {
-            if (lhs(r, c) != rhs(r, c)) {
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
-/**
- * Equal.
- * vec == vec
- */
-template <typename T, std::size_t D>
-constexpr bool operator==(const vec<T, D>& lhs, const vec<T, D>& rhs) {
-    for (std::size_t d = 0; d < D; ++ d) {
-        if (lhs(d) != rhs(d)) {
+template <typename T, typename = eif<is_mat<T> || is_vec<T> || is_quat<T>>>
+constexpr bool operator==(const T& lhs, const T& rhs) {
+    for (std::size_t i = 0; i < T::size; ++ i) {
+        if (lhs.data[i] != rhs.data[i]) {
             return false;
         }
     }
@@ -56,54 +38,25 @@ constexpr bool operator==(const vec<T, D>& lhs, const vec<T, D>& rhs) {
 }
 
 /**
- * Equal.
- * quat == quat
- */
-template <typename T>
-constexpr bool operator==(const quat<T>& lhs, const quat<T>& rhs) {
-    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w;
-}
-
-/**
  * Different.
- * mat != mat
+ * For mat, vec and quat.
  */
-template <typename T, std::size_t R, std::size_t C>
-constexpr bool operator!=(const mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
+template <typename T, typename = eif<is_mat<T> || is_vec<T> || is_quat<T>>>
+constexpr bool operator!=(const T& lhs, const T& rhs) {
     return ! (lhs == rhs);
 }
 
 /**
- * Different.
- * vec != vec
- */
-template <typename T, std::size_t D>
-constexpr bool operator!=(const vec<T, D>& lhs, const vec<T, D>& rhs) {
-    return ! (lhs == rhs);
-}
-
-/**
- * Different.
- * quat != quat
- */
-template <typename T>
-constexpr bool operator!=(const quat<T>& lhs, const quat<T>& rhs) {
-    return ! (lhs == rhs);
-}
-
-/**
- * Lesser than.
- * mat < mat
+ * Lesser.
+ * For mat, vec and quat.
  * Lexicographical comparison useful when used with container which needs a way
  * to sort elements.
  */
-template <typename T, std::size_t R, std::size_t C>
-constexpr bool operator<(const mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
-    for (unsigned int r = 0; r < R; ++ r) {
-        for (unsigned int c = 0; c < C; ++ c) {
-            if (lhs(r, c) != rhs(r, c)) {
-                return lhs(r, c) < rhs(r, c);
-            }
+template <typename T, typename = eif<is_mat<T> || is_vec<T> || is_quat<T>>>
+constexpr bool operator<(const T& lhs, const T& rhs) {
+    for (std::size_t i = 0; i < T::size; ++ i) {
+        if (lhs.data[i] != rhs.data[i]) {
+            return lhs.data[i] < rhs.data[i];
         }
     }
 
@@ -111,73 +64,29 @@ constexpr bool operator<(const mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
 }
 
 /**
- * Lesser than.
- * vec < vec
- * Lexicographical comparison useful when used with container which needs a way
- * to sort elements.
+ * Greater.
+ * For mat, vec and quat.
  */
-template <typename T, std::size_t D>
-constexpr bool operator<(const vec<T, D>& lhs, const vec<T, D>& rhs) {
-    for (unsigned int d = 0; d < D; ++ d) {
-        if (lhs(d) != rhs(d)) {
-            return lhs(d) < rhs(d);
-        }
-    }
-
-    return false;
-}
-
-/**
- * Greater than.
- * mat > mat
- */
-template <typename T, std::size_t R, std::size_t C>
-constexpr bool operator>(const mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
+template <typename T, typename = eif<is_mat<T> || is_vec<T> || is_quat<T>>>
+constexpr bool operator>(const T& lhs, const T& rhs) {
     return operator<(rhs, lhs); // reverse order
 }
 
 /**
- * Greater than.
- * vec > vec
+ * Lesser or equal.
+ * For mat, vec and quat.
  */
-template <typename T, std::size_t D>
-constexpr bool operator>(const vec<T, D>& lhs, const vec<T, D>& rhs) {
-    return operator<(rhs, lhs); // reverse order
-}
-
-/**
- * Lesser or equal to.
- * mat <= mat
- */
-template <typename T, std::size_t R, std::size_t C>
-constexpr bool operator<=(const mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
+template <typename T, typename = eif<is_mat<T> || is_vec<T> || is_quat<T>>>
+constexpr bool operator<=(const T& lhs, const T& rhs) {
     return ! (lhs > rhs);
 }
 
 /**
- * Lesser or equal to.
- * vec <= vec
+ * Greater or equal.
+ * For mat, vec and quat.
  */
-template <typename T, std::size_t D>
-constexpr bool operator<=(const vec<T, D>& lhs, const vec<T, D>& rhs) {
-    return ! (lhs > rhs);
-}
-
-/**
- * Greater or equal to.
- * mat >= mat
- */
-template <typename T, std::size_t R, std::size_t C>
-constexpr bool operator>=(const mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
-    return ! (lhs < rhs);
-}
-
-/**
- * Greater or equal to.
- * vec >= vec
- */
-template <typename T, std::size_t D>
-constexpr bool operator>=(const vec<T, D>& lhs, const vec<T, D>& rhs) {
+template <typename T, typename = eif<is_mat<T> || is_vec<T> || is_quat<T>>>
+constexpr bool operator>=(const T& lhs, const T& rhs) {
     return ! (lhs < rhs);
 }
 
@@ -196,20 +105,11 @@ constexpr auto opposite(const T& t, std::index_sequence<Is...>) {
 
 /**
  * Opposite.
- * - mat
+ * For mat and vec.
  */
-template <typename T, std::size_t R, std::size_t C>
-constexpr auto operator-(const mat<T, R, C>& rhs) {
-    return detail::opposite(rhs, std::make_index_sequence<R * C>());
-}
-
-/**
- * Opposite.
- * - vec
- */
-template <typename T, std::size_t D>
-constexpr auto operator-(const vec<T, D>& rhs) {
-    return detail::opposite(rhs, std::make_index_sequence<D>());
+template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
+constexpr auto operator-(const T& rhs) {
+    return detail::opposite(rhs, std::make_index_sequence<T::size>());
 }
 
 /**
@@ -217,8 +117,7 @@ constexpr auto operator-(const vec<T, D>& rhs) {
  */
 
 /**
- * Multiplication.
- * mat * mat
+ * Matrix-matrix multiplication.
  */
 template <typename T, std::size_t R, std::size_t LC, std::size_t RC>
 constexpr auto operator*(const mat<T, R, LC>& lhs, const mat<T, LC, RC>& rhs) {
@@ -241,8 +140,7 @@ constexpr auto operator*(const mat<T, R, LC>& lhs, const mat<T, LC, RC>& rhs) {
 }
 
 /**
- * Multiplication.
- * mat * vec
+ * Matrix-vector multiplication.
  */
 template <typename T, std::size_t R, std::size_t C>
 constexpr auto operator*(const mat<T, R, C>& lhs, const vec<T, C>& rhs) {
@@ -262,12 +160,12 @@ constexpr auto operator*(const mat<T, R, C>& lhs, const vec<T, C>& rhs) {
 }
 
 /**
- * Multiplication.
- * mat * arithmetic
+ * Scalar multiplication.
+ * For mat and vec.
  */
-template <typename LT, std::size_t R, std::size_t C, typename RT, typename = eif<is_arithmetic<RT>>>
-constexpr auto operator*(const mat<LT, R, C>& lhs, RT rhs) {
-    mat<LT, R, C> result{lhs};
+template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
+constexpr auto operator*(const LT& lhs, RT rhs) {
+    LT result{lhs};
 
     result *= rhs;
 
@@ -275,56 +173,21 @@ constexpr auto operator*(const mat<LT, R, C>& lhs, RT rhs) {
 }
 
 /**
- * Multiplication.
- * arithmetic * mat
+ * Scalar multiplication.
+ * For mat and vec.
  */
-template <typename LT, typename RT, std::size_t R, std::size_t C, typename = eif<is_arithmetic<LT>>>
-constexpr auto operator*(LT lhs, const mat<RT, R, C>& rhs) {
+template <typename LT, typename RT, typename = eif<is_num<LT> && (is_mat<RT> || is_vec<RT>)>>
+constexpr auto operator*(LT lhs, const RT& rhs) {
     return rhs * lhs; // reverse order
 }
 
 /**
- * Multiplication.
- * vec * arithmetic
+ * Scalar division.
+ * For mat and vec.
  */
-template <typename LT, std::size_t D, typename RT, typename = eif<is_arithmetic<RT>>>
-constexpr auto operator*(const vec<LT, D>& lhs, RT rhs) {
-    vec<LT, D> result{lhs};
-
-    result *= rhs;
-
-    return result;
-}
-
-/**
- * Multiplication.
- * arithmetic * vec
- */
-template <typename LT, typename RT, std::size_t D, typename = eif<is_arithmetic<LT>>>
-constexpr auto operator*(LT lhs, const vec<RT, D>& rhs) {
-    return rhs * lhs; // reverse order
-}
-
-/**
- * Division.
- * mat / arithmetic
- */
-template <typename LT, std::size_t R, std::size_t C, typename RT, typename = eif<is_arithmetic<RT>>>
-constexpr auto operator/(const mat<LT, R, C>& lhs, RT rhs) {
-    mat<LT, R, C> result{lhs};
-
-    result /= rhs;
-
-    return result;
-}
-
-/**
- * Division.
- * vec / arithmetic
- */
-template <typename LT, std::size_t D, typename RT, typename = eif<is_arithmetic<RT>>>
-constexpr auto operator/(const vec<LT, D>& lhs, RT rhs) {
-    vec<LT, D> result{lhs};
+template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
+constexpr auto operator/(const LT& lhs, RT rhs) {
+    LT result{lhs};
 
     result /= rhs;
 
@@ -333,24 +196,11 @@ constexpr auto operator/(const vec<LT, D>& lhs, RT rhs) {
 
 /**
  * Addition.
- * mat + mat
+ * For mat and vec.
  */
-template <typename T, std::size_t R, std::size_t C>
-constexpr auto operator+(const mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
-    mat<T, R, C> result{lhs};
-
-    result += rhs;
-
-    return result;
-}
-
-/**
- * Addition.
- * vec + vec
- */
-template <typename T, std::size_t D>
-constexpr auto operator+(const vec<T, D>& lhs, const vec<T, D>& rhs) {
-    vec<T, D> result{lhs};
+template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
+constexpr auto operator+(const T& lhs, const T& rhs) {
+    T result{lhs};
 
     result += rhs;
 
@@ -359,24 +209,11 @@ constexpr auto operator+(const vec<T, D>& lhs, const vec<T, D>& rhs) {
 
 /**
  * Subtraction.
- * mat - mat
+ * For mat and vec.
  */
-template <typename T, std::size_t R, std::size_t C>
-constexpr auto operator-(const mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
-    mat<T, R, C> result{lhs};
-
-    result -= rhs;
-
-    return result;
-}
-
-/**
- * Subtraction.
- * vec - vec
- */
-template <typename T, std::size_t D>
-constexpr auto operator-(const vec<T, D>& lhs, const vec<T, D>& rhs) {
-    vec<T, D> result{lhs};
+template <typename T>
+constexpr auto operator-(const T& lhs, const T& rhs) {
+    T result{lhs};
 
     result -= rhs;
 
@@ -388,34 +225,7 @@ constexpr auto operator-(const vec<T, D>& lhs, const vec<T, D>& rhs) {
  */
 
 /**
- * Multiplication.
- * mat *= arithmetic
- */
-template <typename LT, std::size_t R, std::size_t C, typename RT, typename = eif<is_arithmetic<RT>>>
-constexpr const auto& operator*=(mat<LT, R, C>& lhs, RT rhs) {
-    for (std::size_t i = 0; i < R * C; ++ i) {
-        lhs.data[i] *= rhs;
-    }
-
-    return lhs;
-}
-
-/**
- * Multiplication.
- * vec *= arithmetic
- */
-template <typename LT, std::size_t D, typename RT, typename = eif<is_arithmetic<RT>>>
-constexpr const auto& operator*=(vec<LT, D> & lhs, RT rhs) {
-    for (std::size_t i = 0; i < D; ++ i) {
-        lhs.data[i] *= rhs;
-    }
-
-    return lhs;
-}
-
-/**
- * Multiplication.
- * mat *= mat
+ * Matrix-matrix multiplication.
  */
 template <typename T, std::size_t R, std::size_t C>
 constexpr const auto& operator*=(mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
@@ -425,25 +235,25 @@ constexpr const auto& operator*=(mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
 }
 
 /**
- * Division.
- * mat /= arithmetic
+ * Scalar multiplication.
+ * For mat and vec.
  */
-template <typename LT, std::size_t R, std::size_t C, typename RT, typename = eif<is_arithmetic<RT>>>
-constexpr const auto& operator/=(mat<LT, R, C>& lhs, RT rhs) {
-    for (std::size_t i = 0; i < R * C; ++ i) {
-        lhs.data[i] /= rhs;
+template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
+constexpr const auto& operator*=(LT& lhs, RT rhs) {
+    for (std::size_t i = 0; i < LT::size; ++ i) {
+        lhs.data[i] *= rhs;
     }
 
     return lhs;
 }
 
 /**
- * Division.
- * vec /= arithmetic
+ * Scalar division.
+ * For mat and vec.
  */
-template <typename LT, std::size_t D, typename RT, typename = eif<is_arithmetic<RT>>>
-constexpr const auto& operator/=(vec<LT, D>& lhs, RT rhs) {
-    for (std::size_t i = 0; i < D; ++ i) {
+template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
+constexpr const auto& operator/=(LT& lhs, RT rhs) {
+    for (std::size_t i = 0; i < LT::size; ++ i) {
         lhs.data[i] /= rhs;
     }
 
@@ -452,24 +262,11 @@ constexpr const auto& operator/=(vec<LT, D>& lhs, RT rhs) {
 
 /**
  * Addition.
- * mat += mat
+ * For mat and vec.
  */
-template <typename T, std::size_t R, std::size_t C>
-constexpr const auto& operator+=(mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
-    for (std::size_t i = 0; i < R * C; ++ i) {
-        lhs.data[i] += rhs.data[i];
-    }
-
-    return lhs;
-}
-
-/**
- * Addition.
- * vec += vec
- */
-template <typename T, std::size_t D>
-constexpr const auto& operator+=(vec<T, D>& lhs, const vec<T, D>& rhs) {
-    for (std::size_t i = 0; i < D; ++ i) {
+template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
+constexpr const auto& operator+=(T& lhs, const T& rhs) {
+    for (std::size_t i = 0; i < T::size; ++ i) {
         lhs.data[i] += rhs.data[i];
     }
 
@@ -478,24 +275,11 @@ constexpr const auto& operator+=(vec<T, D>& lhs, const vec<T, D>& rhs) {
 
 /**
  * Subtraction.
- * mat -= mat
+ * For mat and vec.
  */
-template <typename T, std::size_t R, std::size_t C>
-constexpr const auto& operator-=(mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
-    for (std::size_t i = 0; i < R * C; ++ i) {
-        lhs.data[i] -= rhs.data[i];
-    }
-
-    return lhs;
-}
-
-/**
- * Subtraction.
- * vec -= vec
- */
-template <typename T, std::size_t D>
-constexpr const auto& operator-=(vec<T, D>& lhs, const vec<T, D>& rhs) {
-    for (std::size_t i = 0; i < D; ++ i) {
+template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
+constexpr const auto& operator-=(T& lhs, const T& rhs) {
+    for (std::size_t i = 0; i < T::size; ++ i) {
         lhs.data[i] -= rhs.data[i];
     }
 

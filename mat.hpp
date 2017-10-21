@@ -12,7 +12,6 @@
 #include <typeinfo>
 
 #include "vec.hpp"
-#include "generators.hpp"
 
 #define EE_MATRIX_COLUMN_MAJOR 1
 
@@ -67,9 +66,9 @@ inline constexpr auto mat_i_to_c(
 inline constexpr auto mat_i_to_rc(
     std::size_t i, const vec<std::size_t, 2>& size) {
 #if EE_MATRIX_COLUMN_MAJOR
-    return make_vec(i % size(0), i / size(0));
+    return vec<std::size_t, 2>{i % size(0), i / size(0)};
 #else
-    return make_vec(i / size(1), i % size(1));
+    return vec<std::size_t, 2>{i / size(1), i % size(1)};
 #endif
 }
 
@@ -113,6 +112,25 @@ struct mat {
     }
 };
 
+/**
+ * A way to identify matrices.
+ */
+namespace detail {
+
+template <typename>
+struct is_mat_impl : std::false_type {};
+
+template <typename T, std::size_t R, std::size_t C>
+struct is_mat_impl<mat<T, R, C>> : std::true_type {};
+
+} // namespace detail
+
+template <typename T>
+constexpr bool is_mat = detail::is_mat_impl<std::decay_t<T>>::value;
+
+/**
+ * Output formatting
+ */
 template <typename T, std::size_t R, std::size_t C>
 std::ostream& operator<<(std::ostream& output, const mat<T, R, C>& m) {
     output << "mat<" << typeid(T).name() << ", " <<

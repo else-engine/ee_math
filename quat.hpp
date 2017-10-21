@@ -50,6 +50,25 @@ struct quat {
     }
 };
 
+/**
+ * A way to identify quaternions.
+ */
+namespace detail {
+
+template <typename>
+struct is_quat_impl : std::false_type {};
+
+template <typename T>
+struct is_quat_impl<quat<T>> : std::true_type {};
+
+} // namespace detail
+
+template <typename T>
+constexpr bool is_quat = detail::is_quat_impl<std::decay_t<T>>::value;
+
+/**
+ * Output formatting
+ */
 template <typename T>
 std::ostream& operator<<(std::ostream& output, const quat<T>& q) {
     output << "quat<" << typeid(T).name() << "> {"

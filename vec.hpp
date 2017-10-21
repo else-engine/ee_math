@@ -239,6 +239,25 @@ struct vec<T, 4> {
     }
 };
 
+/**
+ * A way to identify vectors.
+ */
+namespace detail {
+
+template <typename>
+struct is_vec_impl : std::false_type {};
+
+template <typename T, std::size_t D>
+struct is_vec_impl<vec<T, D>> : std::true_type {};
+
+} // namespace detail
+
+template <typename T>
+constexpr bool is_vec = detail::is_vec_impl<std::decay_t<T>>::value;
+
+/**
+ * Output formatting
+ */
 template <typename T, std::size_t D>
 std::ostream& operator<<(std::ostream& output, const vec<T, D>& v) {
     output << "vec<" << typeid(T).name() << ", " << D << "> {";

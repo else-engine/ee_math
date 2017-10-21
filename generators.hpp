@@ -12,6 +12,7 @@
 
 #include <ee_utils/templates.hpp>
 
+#include "common.hpp"
 #include "vec.hpp"
 #include "mat.hpp"
 
@@ -19,7 +20,6 @@ namespace ee {
 namespace math {
 
 using tutil::eif;
-using tutil::is_arithmetic;
 using tutil::all_same;
 
 /**
@@ -80,13 +80,10 @@ constexpr auto as(Ts&&... ts) {
     return O{ts...};
 }
 
-template <typename, std::size_t I, typename T, std::size_t R, std::size_t C, typename... Rs, typename = eif<I != 0>>
-constexpr auto as(const mat<T, R, C>&, Rs&&...);
+template <typename, std::size_t I, typename T, typename... Rs, typename = eif<I != 0 && (is_mat<T> || is_vec<T>)>>
+constexpr auto as(const T&, Rs&&...);
 
-template <typename, std::size_t I, typename T, std::size_t D, typename... Rs, typename = eif<I != 0>>
-constexpr auto as(const vec<T, D>&, Rs&&...);
-
-template <typename O, std::size_t I, typename F, typename... Rs, typename = eif<I != 0>, typename = eif<is_arithmetic<F>>>
+template <typename O, std::size_t I, typename F, typename... Rs, typename = eif<I != 0>, typename = eif<is_num<F>>>
 constexpr auto as(F&& f, Rs&&... rs) {
     return as<O, I - 1>(std::forward<Rs>(rs)..., static_cast<typename O::value_type>(f));
 }
@@ -96,14 +93,9 @@ constexpr auto as(std::index_sequence<Is...>, const F* const f, Rs&&... rs) {
     return as<O, I - 1>(std::forward<Rs>(rs)..., static_cast<typename O::value_type>(f[Is])...);
 }
 
-template <typename O, std::size_t I, typename T, std::size_t R, std::size_t C, typename... Rs, typename>
-constexpr auto as(const mat<T, R, C>& f, Rs&&... rs) {
-    return as<O, I>(std::make_index_sequence<R * C>{}, f.data, std::forward<Rs>(rs)...);
-}
-
-template <typename O, std::size_t I, typename T, std::size_t D, typename... Rs, typename>
-constexpr auto as(const vec<T, D>& f, Rs&&... rs) {
-    return as<O, I>(std::make_index_sequence<D>{}, f.data, std::forward<Rs>(rs)...);
+template <typename O, std::size_t I, typename T, typename... Rs, typename>
+constexpr auto as(const T& f, Rs&&... rs) {
+    return as<O, I>(std::make_index_sequence<T::size>{}, f.data, std::forward<Rs>(rs)...);
 }
 
 } // namespace detail
