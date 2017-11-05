@@ -94,6 +94,16 @@ constexpr bool operator>=(const T& lhs, const T& rhs) {
  * Unary arithmetic operators.
  */
 
+/**
+ * +.
+ * For mat and vec.
+ * Yeah, does nothing...
+ */
+template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
+constexpr auto operator+(const T& rhs) {
+    return rhs;
+}
+
 namespace detail {
 
 template <typename T, std::size_t... Is>
