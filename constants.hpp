@@ -11,7 +11,6 @@
 
 #include "mat.hpp"
 #include "quat.hpp"
-#include "vec.hpp"
 
 namespace ee {
 namespace math {
@@ -30,50 +29,11 @@ EE_CONSTANT(c_pi  ,   3.1415926535897932384626433832795028841971693993751L);
 //EE_CONSTANT(c_pi, std::acos(-1.0L));
 
 EE_CONSTANT(c_two_pi     ,   T{2L} * c_pi<T>);
-EE_CONSTANT(c_half_p     , T{0.5L} * c_pi<T>);
+EE_CONSTANT(c_half_pi    , T{0.5L} * c_pi<T>);
 EE_CONSTANT(c_pi_over_180, c_pi<T> / T{180L});
 EE_CONSTANT(c_180_over_pi, T{180L} / c_pi<T>);
 
 #undef EE_CONSTANT
-
-/**
- * Common 3D vectors.
- */
-template <typename T>
-constexpr vec<T, 3> c_xpos {   T{1L},   T{0L},   T{0L} };
-
-template <typename T>
-constexpr vec<T, 3> c_ypos {   T{0L},   T{1L},   T{0L} };
-
-template <typename T>
-constexpr vec<T, 3> c_zpos {   T{0L},   T{0L},   T{1L} };
-
-template <typename T>
-constexpr vec<T, 3> c_xneg { - T{1L},   T{0L},   T{0L} };
-
-template <typename T>
-constexpr vec<T, 3> c_yneg {   T{0L}, - T{1L},   T{0L} };
-
-template <typename T>
-constexpr vec<T, 3> c_zneg {   T{0L},   T{0L}, - T{1L} };
-
-template <typename T>
-constexpr vec<T, 3> c_right{   T{1L},   T{0L},   T{0L} };
-
-template <typename T>
-constexpr vec<T, 3> c_up   {   T{0L},   T{1L},   T{0L} };
-
-template <typename T>
-constexpr vec<T, 3> c_fwd  {   T{0L},   T{0L}, - T{1L} };
-
-template <typename T>
-constexpr vec<T, 3> c_left { - T{1L},   T{0L},   T{0L} };
-
-template <typename T>
-constexpr vec<T, 3> c_down {   T{0L}, - T{1L},   T{0L} };
-
-template <typename T>
-constexpr vec<T, 3> c_bwd  {   T{0L},   T{0L},   T{1L} };
 
 /**
  * Identities
