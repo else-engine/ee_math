@@ -225,16 +225,45 @@ constexpr quat<T> from_basis(const quat<T>& q) {
 /**
  * Output formatting
  */
-template <typename I, typename J, typename K>
-std::ostream& operator<<(std::ostream& output, const basis<I, J, K>&) {
-    constexpr vec<int, 3> i = basis<I, J, K>::i::template v<int>;
-    constexpr vec<int, 3> j = basis<I, J, K>::j::template v<int>;
-    constexpr vec<int, 3> k = basis<I, J, K>::k::template v<int>;
+inline std::ostream& operator<<(std::ostream& output, xpos) {
+    output << "xpos";
 
-    output << "basis<I, J, K> { "
-        << "xpos {" << i(0) << ", " << i(1) << ", " << i(2) << "}, "
-        << "ypos {" << j(0) << ", " << j(1) << ", " << j(2) << "}, "
-        << "zpos {" << k(0) << ", " << k(1) << ", " << k(2) << "} }";
+    return output;
+}
+
+inline std::ostream& operator<<(std::ostream& output, ypos) {
+    output << "ypos";
+
+    return output;
+}
+
+inline std::ostream& operator<<(std::ostream& output, zpos) {
+    output << "zpos";
+
+    return output;
+}
+
+inline std::ostream& operator<<(std::ostream& output, xneg) {
+    output << "xneg";
+
+    return output;
+}
+
+inline std::ostream& operator<<(std::ostream& output, yneg) {
+    output << "yneg";
+
+    return output;
+}
+
+inline std::ostream& operator<<(std::ostream& output, zneg) {
+    output << "zneg";
+
+    return output;
+}
+
+template <typename I, typename J, typename K>
+std::ostream& operator<<(std::ostream& output, basis<I, J, K>) {
+    output << "basis<" << I{} << ", " << J{} << ", " << K{} << ">";
 
     return output;
 }
