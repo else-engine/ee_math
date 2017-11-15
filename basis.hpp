@@ -11,6 +11,7 @@
 
 #include "vec.hpp"
 #include "quat.hpp"
+#include "mat.hpp"
 #include "operators.hpp" // vec == vec
 #include "Vec_operators.hpp" // for cross
 
@@ -110,19 +111,76 @@ constexpr vec<T, 3> to_basis(const vec<T, 3>& v) {
     constexpr auto j = B::j::template v<int>;
     constexpr auto k = B::k::template v<int>;
 
-    constexpr int x_index  = (i(0) ? 0 : 0) + (i(1) ? 1 : 0) + (i(2) ? 2 : 0);
-    constexpr int x_switch =  i(0)      +      i(1)      +      i(2);
+    constexpr int i_index  = (i(0) ? 0 : 0) + (i(1) ? 1 : 0) + (i(2) ? 2 : 0);
+    constexpr int i_switch =  i(0)      +      i(1)      +      i(2);
 
-    constexpr int y_index  = (j(0) ? 0 : 0) + (j(1) ? 1 : 0) + (j(2) ? 2 : 0);
-    constexpr int y_switch =  j(0)      +      j(1)      +      j(2);
+    constexpr int j_index  = (j(0) ? 0 : 0) + (j(1) ? 1 : 0) + (j(2) ? 2 : 0);
+    constexpr int j_switch =  j(0)      +      j(1)      +      j(2);
 
-    constexpr int z_index  = (k(0) ? 0 : 0) + (k(1) ? 1 : 0) + (k(2) ? 2 : 0);
-    constexpr int z_switch =  k(0)      +      k(1)      +      k(2);
+    constexpr int k_index  = (k(0) ? 0 : 0) + (k(1) ? 1 : 0) + (k(2) ? 2 : 0);
+    constexpr int k_switch =  k(0)      +      k(1)      +      k(2);
 
     return {
-        x_switch * v(x_index),
-        y_switch * v(y_index),
-        z_switch * v(z_index)};
+        i_switch * v(i_index),
+        j_switch * v(j_index),
+        k_switch * v(k_index)};
+}
+
+/**
+ * Express transformation matrix in B.
+ * Input matrix must come from basis<xpos, ypos, zpos>.
+ * Same as returning M' from input M with :
+ *
+ *       │Ix Iy Iz 0│       │Ix Jx Kx 0│
+ *  M' = │Jx Jy Jz 0│ ∙ M ∙ │Iy Jy Ky 0│
+ *       │Kx Ky Kz 0│       │Iz Jz Kz 0│
+ *       │ 0  0  0 1│       │ 0  0  0 1│
+ *
+ * But (relying on I, J, K constraints) coded in a more constant expression way.
+ *
+ * So, when we do :
+ *
+ * p' = M' * p
+ *
+ * it is equivalent to :
+ *
+ * p' = to_basis< B >( M * from_basis< B >( p ) )
+ */
+template <typename B, typename T>
+constexpr mat<T, 4, 4> to_basis(const mat<T, 4, 4>& m) {
+    constexpr auto i = B::i::template v<int>;
+    constexpr auto j = B::j::template v<int>;
+    constexpr auto k = B::k::template v<int>;
+
+    constexpr int i_index  = (i(0) ? 0 : 0) + (i(1) ? 1 : 0) + (i(2) ? 2 : 0);
+    constexpr int i_switch =  i(0)      +      i(1)      +      i(2);
+
+    constexpr int j_index  = (j(0) ? 0 : 0) + (j(1) ? 1 : 0) + (j(2) ? 2 : 0);
+    constexpr int j_switch =  j(0)      +      j(1)      +      j(2);
+
+    constexpr int k_index  = (k(0) ? 0 : 0) + (k(1) ? 1 : 0) + (k(2) ? 2 : 0);
+    constexpr int k_switch =  k(0)      +      k(1)      +      k(2);
+
+    return {
+        i_switch * i_switch * m(i_index, i_index),
+        i_switch * j_switch * m(j_index, i_index),
+        i_switch * k_switch * m(k_index, i_index),
+        i_switch            * m(   3   , i_index),
+
+        j_switch * i_switch * m(i_index, j_index),
+        j_switch * j_switch * m(j_index, j_index),
+        j_switch * k_switch * m(k_index, j_index),
+        j_switch            * m(   3   , j_index),
+
+        k_switch * i_switch * m(i_index, k_index),
+        k_switch * j_switch * m(j_index, k_index),
+        k_switch * k_switch * m(k_index, k_index),
+        k_switch            * m(   3   , k_index),
+
+                   i_switch * m(i_index,    3   ),
+                   j_switch * m(j_index,    3   ),
+                   k_switch * m(k_index,    3   ),
+                              m(   3   ,    3   )};
 }
 
 /**
@@ -141,19 +199,19 @@ constexpr quat<T> to_basis(const quat<T>& q) {
     constexpr int angle_switch =
         initial_basis::is_right_handed == B::is_right_handed ? 1 : -1;
 
-    constexpr int x_index  = (i(0) ? 0 : 0) + (i(1) ? 1 : 0) + (i(2) ? 2 : 0);
-    constexpr int x_switch = (i(0)      +      i(1)      +      i(2)) * angle_switch;
+    constexpr int i_index  = (i(0) ? 0 : 0) + (i(1) ? 1 : 0) + (i(2) ? 2 : 0);
+    constexpr int i_switch = (i(0)      +      i(1)      +      i(2)) * angle_switch;
 
-    constexpr int y_index  = (j(0) ? 0 : 0) + (j(1) ? 1 : 0) + (j(2) ? 2 : 0);
-    constexpr int y_switch = (j(0)      +      j(1)      +      j(2)) * angle_switch;
+    constexpr int j_index  = (j(0) ? 0 : 0) + (j(1) ? 1 : 0) + (j(2) ? 2 : 0);
+    constexpr int j_switch = (j(0)      +      j(1)      +      j(2)) * angle_switch;
 
-    constexpr int z_index  = (k(0) ? 0 : 0) + (k(1) ? 1 : 0) + (k(2) ? 2 : 0);
-    constexpr int z_switch = (k(0)      +      k(1)      +      k(2)) * angle_switch;
+    constexpr int k_index  = (k(0) ? 0 : 0) + (k(1) ? 1 : 0) + (k(2) ? 2 : 0);
+    constexpr int k_switch = (k(0)      +      k(1)      +      k(2)) * angle_switch;
 
     return {
-        x_switch * q(x_index),
-        y_switch * q(y_index),
-        z_switch * q(z_index),
+        i_switch * q(i_index),
+        j_switch * q(j_index),
+        k_switch * q(k_index),
         q(3)};
 }
 
@@ -188,6 +246,63 @@ constexpr vec<T, 3> from_basis(const vec<T, 3>& v) {
         x_switch * v(x_index),
         y_switch * v(y_index),
         z_switch * v(z_index)};
+}
+
+/**
+ * Express transformation matrix in basis<xpos, ypos, zpos>.
+ * Input matrix must come from B.
+ * Same as returning M' from input M with :
+ *
+ *       │Ix Jx Kx 0│       │Ix Iy Iz 0│
+ *  M' = │Iy Jy Ky 0│ ∙ M ∙ │Jx Jy Jz 0│
+ *       │Iz Jz Kz 0│       │Kx Ky Kz 0│
+ *       │ 0  0  0 1│       │ 0  0  0 1│
+ *
+ * But (relying on I, J, K constraints) coded in a more constant expression way.
+ *
+ * So, when we do :
+ *
+ * p' = M' * p
+ *
+ * it is equivalent to :
+ *
+ * p' = from_basis< B >( M * to_basis< B >( p ) )
+ */
+template <typename B, typename T>
+constexpr mat<T, 4, 4> from_basis(const mat<T, 4, 4>& m) {
+    constexpr auto i = B::i::template v<int>;
+    constexpr auto j = B::j::template v<int>;
+    constexpr auto k = B::k::template v<int>;
+
+    constexpr int x_index  = (i(0) ? 0 : 0) + (j(0) ? 1 : 0) + (k(0) ? 2 : 0);
+    constexpr int x_switch =  i(0)      +      j(0)      +      k(0);
+
+    constexpr int y_index  = (i(1) ? 0 : 0) + (j(1) ? 1 : 0) + (k(1) ? 2 : 0);
+    constexpr int y_switch =  i(1)      +      j(1)      +      k(1);
+
+    constexpr int z_index  = (i(2) ? 0 : 0) + (j(2) ? 1 : 0) + (k(2) ? 2 : 0);
+    constexpr int z_switch =  i(2)      +      j(2)      +      k(2);
+
+    return {
+        x_switch * x_switch * m(x_index, x_index),
+        x_switch * y_switch * m(y_index, x_index),
+        x_switch * z_switch * m(z_index, x_index),
+        x_switch            * m(   3   , x_index),
+
+        y_switch * x_switch * m(x_index, y_index),
+        y_switch * y_switch * m(y_index, y_index),
+        y_switch * z_switch * m(z_index, y_index),
+        y_switch            * m(   3   , y_index),
+
+        z_switch * x_switch * m(x_index, z_index),
+        z_switch * y_switch * m(y_index, z_index),
+        z_switch * z_switch * m(z_index, z_index),
+        z_switch            * m(   3   , z_index),
+
+                   x_switch * m(x_index,    3   ),
+                   y_switch * m(y_index,    3   ),
+                   z_switch * m(z_index,    3   ),
+                              m(   3   ,    3   )};
 }
 
 /**
