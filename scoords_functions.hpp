@@ -11,6 +11,7 @@
 
 #include "scoords.hpp"
 
+#include "basis_functions.hpp"
 #include "vec.hpp"
 #include "quat.hpp"
 
@@ -60,6 +61,26 @@ quat<T> quat_from(const scoords_usphere<T, B>& scu) {
           cos_t * sin_p,
           sin_t * cos_p,
           cos_t * cos_p});
+}
+
+/**
+ * Return the matrix describing rotation required to transform scu's
+ * azimuth reference into scu's direction vector.
+ */
+template <typename T, typename B>
+mat<T, 4, 4> mat_from(const scoords_usphere<T, B>& scu) {
+    const T cos_t = std::cos(scu.theta);
+    const T sin_t = std::sin(scu.theta);
+
+    const T p = scu.phi - c_half_pi<T>;
+    const T cos_p = std::cos(p);
+    const T sin_p = std::sin(p);
+
+    return from_basis<B>(mat<T, 4, 4>{
+        cos_t * cos_p, sin_t * cos_p, - sin_p, T{0L},
+          - sin_t    ,     cos_t    ,   T{0L}, T{0L},
+        cos_t * sin_p, sin_t * sin_p,   cos_p, T{0L},
+            T{0L}    ,     T{0L}    ,   T{0L}, T{1L}});
 }
 
 namespace detail {

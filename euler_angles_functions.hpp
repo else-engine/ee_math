@@ -11,6 +11,7 @@
 
 #include "euler_angles.hpp"
 
+#include "basis_functions.hpp"
 #include "mat.hpp"
 #include "quat.hpp"
 
