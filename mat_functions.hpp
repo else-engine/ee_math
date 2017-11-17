@@ -186,5 +186,244 @@ constexpr mat<T, 4, 4> viewport(const uint2& size, T near, T far) {
         half_size.w, half_size.h, (far + near) * T{0.5L}, T{1L}};
 }
 
+namespace detail {
+
+template <typename T, std::size_t R, std::size_t C, std::size_t... Is>
+constexpr auto transpose(const mat<T, R, C>& M, std::index_sequence<Is...>) {
+    return mat<T, C, R>{
+        M.data[Is / C + R * (Is % C)]...
+    };
+}
+
+} // namespace detail
+
+/**
+ * Return the transpose of a matrix.
+ */
+template <typename T, std::size_t R, std::size_t C>
+constexpr auto transpose(const mat<T, R, C>& M) {
+    return detail::transpose(M, std::make_index_sequence<R * C>());
+}
+
+/**
+ * The trace of an n-by-n square matrix A is defined to be the sum of the
+ * elements on the main diagonal.
+ * https://en.wikipedia.org/wiki/Trace_%28linear_algebra%29
+ */
+template <typename T, std::size_t D>
+constexpr auto trace(const mat<T, D, D>& m) {
+    T sum{};
+
+    for (std::size_t d = 0ul; d < D; ++ d) {
+        sum += m(d, d);
+    }
+
+    return sum;
+}
+
+/**
+ * Return determinant of a given matrix.
+ */
+template <typename T, std::size_t D>
+constexpr auto det(const mat<T, D, D>& M) {
+    T result{T{0L}};
+
+    for (std::size_t d = 0ul; d < D; ++ d) {
+        result +=
+            ((d & 1) ? - T{1L} : T{1L})
+            * M(0, d)
+            * det(cut(M, {0, d}));
+    }
+
+    return result;
+}
+
+/**
+ * Return determinant of a square matrix.
+ * This overload is mandatory to avoid generic det() to instantiate a mat0x0.
+ */
+template <typename T>
+constexpr auto det(const mat<T, 1, 1>& M) {
+    return M(0, 0);
+}
+
+/**
+ * Return determinant of a square matrix.
+ * Adding mat2x2 overload use near half less arithmetic operations.
+ */
+template <typename T>
+constexpr auto det(const mat<T, 2, 2>& M) {
+    return M(0, 0) * M(1, 1) - M(0, 1) * M(1, 0);
+}
+
+#if 0
+/**
+ * Return determinant of a square matrix.
+ * Adding mat3x3 overlad still decrease addition count and let multiplication
+ * count unchanged.
+ * Now by checking binary result it seems that up to mat3x3 overload is better
+ * (less instructions) than mat2x2 with debug build but becomes worse with a
+ * release optimized build.
+ */
+template <typename T>
+constexpr auto det(const mat<T, 3, 3>& M) {
+    return
+        M(0, 0) * M(1, 1) * M(2, 2) +
+        M(0, 1) * M(1, 2) * M(2, 0) +
+        M(0, 2) * M(1, 0) * M(2, 1) -
+        M(0, 2) * M(1, 1) * M(2, 0) -
+        M(0, 1) * M(1, 0) * M(2, 2) -
+        M(0, 0) * M(1, 2) * M(2, 1);
+}
+#endif
+
+#if 0
+/**
+ * Return determinant of a square matrix.
+ * Adding mat4x4 overload deacrease addition just a little more but increase
+ * multiplication near what was obtained at mat1x1 only overload.
+ */
+template <typename T>
+constexpr auto det(const mat<T, 4, 4>& M) {
+    return
+        M(0, 0) * M(1, 1) * M(2, 2) * M(3, 3) -
+        M(0, 0) * M(1, 1) * M(2, 3) * M(3, 2) +
+        M(0, 0) * M(1, 2) * M(2, 3) * M(3, 1) -
+        M(0, 0) * M(1, 2) * M(2, 1) * M(3, 3) +
+        M(0, 0) * M(1, 3) * M(2, 1) * M(3, 2) -
+        M(0, 0) * M(1, 3) * M(2, 2) * M(3, 1) -
+        M(0, 1) * M(1, 2) * M(2, 3) * M(3, 0) +
+        M(0, 1) * M(1, 2) * M(2, 0) * M(3, 3) -
+        M(0, 1) * M(1, 3) * M(2, 0) * M(3, 2) +
+        M(0, 1) * M(1, 3) * M(2, 2) * M(3, 0) -
+        M(0, 1) * M(1, 0) * M(2, 2) * M(3, 3) +
+        M(0, 1) * M(1, 0) * M(2, 3) * M(3, 2) +
+        M(0, 2) * M(1, 3) * M(2, 0) * M(3, 1) -
+        M(0, 2) * M(1, 3) * M(2, 1) * M(3, 0) +
+        M(0, 2) * M(1, 0) * M(2, 1) * M(3, 3) -
+        M(0, 2) * M(1, 0) * M(2, 3) * M(3, 1) +
+        M(0, 2) * M(1, 1) * M(2, 3) * M(3, 0) -
+        M(0, 2) * M(1, 1) * M(2, 0) * M(3, 3) -
+        M(0, 3) * M(1, 0) * M(2, 1) * M(3, 2) +
+        M(0, 3) * M(1, 0) * M(2, 2) * M(3, 1) -
+        M(0, 3) * M(1, 1) * M(2, 2) * M(3, 0) +
+        M(0, 3) * M(1, 1) * M(2, 0) * M(3, 2) -
+        M(0, 3) * M(1, 2) * M(2, 0) * M(3, 1) +
+        M(0, 3) * M(1, 2) * M(2, 1) * M(3, 0);
+}
+#endif
+
+namespace detail {
+
+template <typename T, std::size_t D, std::size_t... Is>
+constexpr auto inv(const mat<T, D, D>& M, T rcp_d, std::index_sequence<Is...>) {
+    return mat<T, D, D>{
+        ((Is % D + Is / D) & std::size_t{1L} ? - T{1L} : T{1L})
+            * det(cut(M, {Is / D, Is % D}))...} * rcp_d;
+}
+
+} // namespace detail
+
+/**
+ * Return inverse of an invertible square matrix.
+ * No test is done for determinant equals zero, input matrix must be invertible.
+ */
+template <typename T, std::size_t D>
+constexpr auto inv(const mat<T, D, D>& M) {
+    const T d = det(M);
+
+    const T rcp_d = T{1L} / d;
+
+    return detail::inv(M, rcp_d, std::make_index_sequence<D * D>());
+}
+
+/**
+ * Return inverse of an invertible square matrix.
+ * Overload for mat3x3.
+ */
+template <typename T>
+constexpr auto inv(const mat<T, 3, 3>& M) {
+    T d = det(M);
+
+    T rcp_d = T{1L} / d;
+
+    return mat<T, 3, 3>{
+        M(1, 1) * M(2, 2) - M(2, 1) * M(1, 2),
+        M(1, 2) * M(2, 0) - M(1, 0) * M(2, 2),
+        M(1, 0) * M(2, 1) - M(2, 0) * M(1, 1),
+
+        M(0, 2) * M(2, 1) - M(0, 1) * M(2, 2),
+        M(0, 0) * M(2, 2) - M(0, 2) * M(2, 0),
+        M(2, 0) * M(0, 1) - M(0, 0) * M(2, 1),
+
+        M(0, 1) * M(1, 2) - M(0, 2) * M(1, 1),
+        M(1, 0) * M(0, 2) - M(0, 0) * M(1, 2),
+        M(0, 0) * M(1, 1) - M(1, 0) * M(0, 1)} * rcp_d;
+}
+
+/**
+ * Return inverse of an invertible square matrix.
+ * Overload for mat4x4.
+ */
+template <typename T>
+constexpr auto inv(const mat<T, 4, 4>& M) {
+    T d = det(M);
+
+    T rcp_d = T{1L} / d;
+
+    return mat<T, 4, 4>{
+        (M(1, 1) * (M(2, 2) * M(3, 3) - M(2, 3) * M(3, 2)) +
+         M(1, 2) * (M(2, 3) * M(3, 1) - M(2, 1) * M(3, 3)) +
+         M(1, 3) * (M(2, 1) * M(3, 2) - M(2, 2) * M(3, 1))),
+        ( - (M(1, 0) * (M(2, 2) * M(3, 3) - M(2, 3) * M(3, 2)) +
+             M(1, 2) * (M(2, 3) * M(3, 0) - M(2, 0) * M(3, 3)) +
+             M(1, 3) * (M(2, 0) * M(3, 2) - M(2, 2) * M(3, 0)))),
+        (M(1, 0) * (M(2, 1) * M(3, 3) - M(2, 3) * M(3, 1)) +
+         M(1, 1) * (M(2, 3) * M(3, 0) - M(2, 0) * M(3, 3)) +
+         M(1, 3) * (M(2, 0) * M(3, 1) - M(2, 1) * M(3, 0))),
+        ( - (M(1, 0) * (M(2, 1) * M(3, 2) - M(2, 2) * M(3, 1)) +
+             M(1, 1) * (M(2, 2) * M(3, 0) - M(2, 0) * M(3, 2)) +
+             M(1, 2) * (M(2, 0) * M(3, 1) - M(2, 1) * M(3, 0)))),
+
+        ( - (M(0, 1) * (M(2, 2) * M(3, 3) - M(2, 3) * M(3, 2)) +
+             M(0, 2) * (M(2, 3) * M(3, 1) - M(2, 1) * M(3, 3)) +
+             M(0, 3) * (M(2, 1) * M(3, 2) - M(2, 2) * M(3, 1)))),
+        (M(0, 0) * (M(2, 2) * M(3, 3) - M(2, 3) * M(3, 2)) +
+         M(0, 2) * (M(2, 3) * M(3, 0) - M(2, 0) * M(3, 3)) +
+         M(0, 3) * (M(2, 0) * M(3, 2) - M(2, 2) * M(3, 0))),
+        ( - (M(0, 0) * (M(2, 1) * M(3, 3) - M(2, 3) * M(3, 1)) +
+             M(0, 1) * (M(2, 3) * M(3, 0) - M(2, 0) * M(3, 3)) +
+             M(0, 3) * (M(2, 0) * M(3, 1) - M(2, 1) * M(3, 0)))),
+        (M(0, 0) * (M(2, 1) * M(3, 2) - M(2, 2) * M(3, 1)) +
+         M(0, 1) * (M(2, 2) * M(3, 0) - M(2, 0) * M(3, 2)) +
+         M(0, 2) * (M(2, 0) * M(3, 1) - M(2, 1) * M(3, 0))),
+
+        (M(0, 1) * (M(1, 2) * M(3, 3) - M(1, 3) * M(3, 2)) +
+         M(0, 2) * (M(1, 3) * M(3, 1) - M(1, 1) * M(3, 3)) +
+         M(0, 3) * (M(1, 1) * M(3, 2) - M(1, 2) * M(3, 1))),
+        ( - (M(0, 0) * (M(1, 2) * M(3, 3) - M(1, 3) * M(3, 2)) +
+             M(0, 2) * (M(1, 3) * M(3, 0) - M(1, 0) * M(3, 3)) +
+             M(0, 3) * (M(1, 0) * M(3, 2) - M(1, 2) * M(3, 0)))),
+        (M(0, 0) * (M(1, 1) * M(3, 3) - M(1, 3) * M(3, 1)) +
+         M(0, 1) * (M(1, 3) * M(3, 0) - M(1, 0) * M(3, 3)) +
+         M(0, 3) * (M(1, 0) * M(3, 1) - M(1, 1) * M(3, 0))),
+        ( - (M(0, 0) * (M(1, 1) * M(3, 2) - M(1, 2) * M(3, 1)) +
+             M(0, 1) * (M(1, 2) * M(3, 0) - M(1, 0) * M(3, 2)) +
+             M(0, 2) * (M(1, 0) * M(3, 1) - M(1, 1) * M(3, 0)))),
+
+        ( - (M(0, 1) * (M(1, 2) * M(2, 3) - M(1, 3) * M(2, 2)) +
+             M(0, 2) * (M(1, 3) * M(2, 1) - M(1, 1) * M(2, 3)) +
+             M(0, 3) * (M(1, 1) * M(2, 2) - M(1, 2) * M(2, 1)))),
+        (M(0, 0) * (M(1, 2) * M(2, 3) - M(1, 3) * M(2, 2)) +
+         M(0, 2) * (M(1, 3) * M(2, 0) - M(1, 0) * M(2, 3)) +
+         M(0, 3) * (M(1, 0) * M(2, 2) - M(1, 2) * M(2, 0))),
+        ( - (M(0, 0) * (M(1, 1) * M(2, 3) - M(1, 3) * M(2, 1)) +
+             M(0, 1) * (M(1, 3) * M(2, 0) - M(1, 0) * M(2, 3)) +
+             M(0, 3) * (M(1, 0) * M(2, 1) - M(1, 1) * M(2, 0)))),
+        (M(0, 0) * (M(1, 1) * M(2, 2) - M(1, 2) * M(2, 1)) +
+         M(0, 1) * (M(1, 2) * M(2, 0) - M(1, 0) * M(2, 2)) +
+         M(0, 2) * (M(1, 0) * M(2, 1) - M(1, 1) * M(2, 0)))} * rcp_d;
+}
+
 } // namespace math
 } // namespace ee
