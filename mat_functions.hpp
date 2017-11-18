@@ -11,6 +11,7 @@
 
 #include "basis.hpp"
 #include "mat.hpp"
+#include "vec_functions.hpp"
 
 namespace ee {
 namespace math {
@@ -162,7 +163,9 @@ constexpr mat<T, 4, 4> orthographic_inverse(T left, T right, T bottom, T top, T 
  * Viewport transformation matrix.
  */
 template <typename T>
-constexpr mat<T, 4, 4> viewport(const uint2& lower_left, const uint2& size, T near, T far) {
+constexpr mat<T, 4, 4> viewport(const vec<std::uint32_t, 2>& lower_left,
+                                const vec<std::uint32_t, 2>& size,
+                                T near, T far) {
     auto half_size = size * T{0.5L};
 
     return {
@@ -176,7 +179,8 @@ constexpr mat<T, 4, 4> viewport(const uint2& lower_left, const uint2& size, T ne
  * Viewport transformation matrix when lower left corner is (0, 0).
  */
 template <typename T>
-constexpr mat<T, 4, 4> viewport(const uint2& size, T near, T far) {
+constexpr mat<T, 4, 4> viewport(const vec<std::uint32_t, 2>& size,
+                                T near, T far) {
     auto half_size = size * T{0.5L};
 
     return {
@@ -423,6 +427,42 @@ constexpr auto inv(const mat<T, 4, 4>& M) {
         (M(0, 0) * (M(1, 1) * M(2, 2) - M(1, 2) * M(2, 1)) +
          M(0, 1) * (M(1, 2) * M(2, 0) - M(1, 0) * M(2, 2)) +
          M(0, 2) * (M(1, 0) * M(2, 1) - M(1, 1) * M(2, 0)))} * rcp_d;
+}
+
+/**
+ * Compute a view matrix (generally V_W). This matrix is the inverse of the W_M
+ * matrix we would need if we wanted to render the concerned camera as an object
+ * of the scene seen from another camera. Ignoring other transformations like
+ * scale, etc..., we have W_M = T * R so we can deduce V_W = R⁻¹ * T⁻¹.
+ *
+ * For R⁻¹, since it is orthogonal (pure rotation), then inverse is equal to
+ * transpose. So instead of placing base vectors as we would do for R, we place
+ * them transposed for R⁻¹.
+ *
+ * For T⁻¹, inverse of a translation is simply the opposite translation.
+ *
+ * Furthermore, the matrix multiplication is optimized to only run on 3 cells
+ * with dot products (negated due to inverse translation), avoiding all the
+ * identity "part" of the translation matrix).
+ */
+template <typename T>
+mat<T, 4, 4> mat_look_at(const vec<T, 3>& pos, const vec<T, 3>& at, const vec<T, 3>& up) {
+    // We should get the identity matrix when the camera is placed at world's
+    // origin looking along world's forward. If forward is -Z, we won't get this
+    // identity matrix so we use backward vector which is POS minus AT. It's
+    // also better this way to avoid negating forward vector anyway when
+    // composing the matrix. It only implies adjusting cross products order to
+    // make sure we still have the correct right and up vectors.
+    auto b = normalize(pos - at);
+
+    vec<T, 3> u, r;
+    orthonormal_basis(b, up, &u, &r);
+
+    return {
+              r.x,           u.x,           b.x,     T{0L},
+              r.y,           u.y,           b.y,     T{0L},
+              r.z,           u.z,           b.z,     T{0L},
+        - dot(r, pos), - dot(u, pos), - dot(b, pos), T{1L}};
 }
 
 } // namespace math
