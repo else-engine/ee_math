@@ -12,8 +12,8 @@
 #include "vec.hpp"
 #include "quat.hpp"
 #include "mat.hpp"
-#include "operators.hpp" // vec == vec
-#include "Vec_operators.hpp" // for cross
+#include "operators.hpp"
+#include "vec_functions.hpp"
 
 // gcc   : reguire gcc 6.1
 // clang : require clang 3.5
