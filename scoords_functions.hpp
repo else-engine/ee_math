@@ -12,6 +12,7 @@
 #include "scoords.hpp"
 
 #include "basis_functions.hpp"
+#include "constants.hpp"
 #include "vec.hpp"
 #include "quat.hpp"
 

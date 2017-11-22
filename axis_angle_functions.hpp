@@ -83,9 +83,9 @@ vec<T, 3> rotate(const axis_angle<T>& aa, const vec<T, 3>& v) {
     const T sin_a = std::sin(aa.angle);
 
     return
-        v * cos_a + cross(aa.axis, v)
-        * sin_a + aa.axis * dot(aa.axis, v)
-        * (T{1L} - cos_a);
+        v * cos_a +
+        cross(aa.axis, v) * sin_a +
+        aa.axis * (dot(aa.axis, v) * (T{1L} - cos_a));
 }
 
 } // namespace math
