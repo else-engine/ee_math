@@ -75,6 +75,19 @@ constexpr vec<T, 3> cross(const vec<T, 3>& v1, const vec<T, 3>& v2) {
             v1(0) * v2(1) - v1(1) * v2(0)};
 }
 
+
+/**
+ * Gram-Schmidt orthonormalize.
+ * Only i has to be normalized before calling this function. i and almost_j must
+ * not be collinear, but are not required to be orthogonal. Returned vector will
+ * be on the common plan i and almost_j already lay on and will be orthogonal to
+ * i, pointing to the same half plane (splitted by i) as almost_j is pointing.
+ */
+template <typename T>
+vec<T, 3> orthonormalize(const vec<T, 3>& i, const vec<T, 3>& almost_j) {
+    return normalize(almost_j - dot(i, almost_j) * i);
+}
+
 /**
  * Generate orthonormal vectors.
  * Only i has to be normalized before calling this function.
@@ -93,7 +106,7 @@ void orthonormal_basis(const vec<T, 3>& i, const vec<T, 3>& almost_j,
     // i and almost_j are not necessarily orthogonal, normalizing k is required.
     *k = normalize(cross(almost_j, i));
 
-    // i and k are for sure orthogonal so normalizing j is not required.
+    // i and k are for sure orthonormal so normalizing j is not required.
     *j = cross(i, *k);
 }
 
