@@ -453,7 +453,7 @@ mat<T, 4, 4> mat_look_at(const vec<T, 3>& pos, const vec<T, 3>& at, const vec<T,
     // also better this way to avoid negating forward vector anyway when
     // composing the matrix. It only implies adjusting cross products order to
     // make sure we still have the correct right and up vectors.
-    auto b = normalize(pos - at);
+    const auto b = normalize(pos - at);
 
     vec<T, 3> u, r;
     orthonormal_basis(b, up, &u, &r);
@@ -463,6 +463,200 @@ mat<T, 4, 4> mat_look_at(const vec<T, 3>& pos, const vec<T, 3>& at, const vec<T,
               r.y,           u.y,           b.y,     T{0L},
               r.z,           u.z,           b.z,     T{0L},
         - dot(r, pos), - dot(u, pos), - dot(b, pos), T{1L}};
+}
+
+namespace detail {
+
+template <std::size_t DO, typename T, std::size_t R, std::size_t C, std::size_t DI>
+struct linear_map_to {
+    static_assert(DO <= R, "matrix row count must be greater or equal to output dimension");
+    static_assert(DI <= C, "matrix column count must be greater or equal to input dimension");
+
+    constexpr static vec<T, DO> from(const mat<T, R, C>& lhs, const vec<T, DI>& rhs) {
+        vec<T, DO> result{};
+
+        for (std::size_t r = 0; r < DO; ++ r) {
+            for (std::size_t c = 0; c < DI; ++ c) {
+                result(r) += lhs(r, c) * rhs(c);
+            }
+        }
+
+        return result;
+    }
+};
+
+template <typename T, std::size_t R, std::size_t C>
+struct linear_map_to<2, T, R, C, 2> {
+    static_assert(2 <= R, "matrix row count must be greater or equal to 2");
+    static_assert(2 <= C, "matrix column count must be greater or equal to 2");
+
+    constexpr static vec<T, 2> from(const mat<T, R, C>& lhs, const vec<T, 2>& rhs) {
+        vec<T, 2> result{
+            lhs(0, 0) * rhs(0) + lhs(0, 1) * rhs(1),
+            lhs(1, 0) * rhs(0) + lhs(1, 1) * rhs(1)
+        };
+
+        return result;
+    }
+};
+
+template <typename T, std::size_t R, std::size_t C>
+struct linear_map_to<3, T, R, C, 3> {
+    static_assert(3 <= R, "matrix row count must be greater or equal to 3");
+    static_assert(3 <= C, "matrix column count must be greater or equal to 3");
+
+    constexpr static vec<T, 3> from(const mat<T, R, C>& lhs, const vec<T, 3>& rhs) {
+        vec<T, 3> result{
+            lhs(0, 0) * rhs(0) + lhs(0, 1) * rhs(1) + lhs(0, 2) * rhs(2),
+            lhs(1, 0) * rhs(0) + lhs(1, 1) * rhs(1) + lhs(1, 2) * rhs(2),
+            lhs(2, 0) * rhs(0) + lhs(2, 1) * rhs(1) + lhs(2, 2) * rhs(2)
+        };
+
+        return result;
+    }
+};
+
+template <std::size_t DO, typename T, std::size_t R, std::size_t C, std::size_t DI>
+struct affine_map_to {
+    static_assert(DO <= R, "matrix row count must be greater or equal to output dimension");
+    static_assert(DI < C, "matrix column count must be greater than input dimension");
+
+    constexpr static vec<T, DO> from(const mat<T, R, C>& lhs, const vec<T, DI>& rhs) {
+        vec<T, DO> result{};
+
+        for (std::size_t r = 0; r < DO; ++ r) {
+            for (std::size_t c = 0; c < DI; ++ c) {
+                result(r) += lhs(r, c) * rhs(c);
+            }
+
+            result(r) += lhs(r, DI);
+        }
+
+        return result;
+    }
+};
+
+template <typename T, std::size_t R, std::size_t C>
+struct affine_map_to<2, T, R, C, 2> {
+    static_assert(2 <= R, "matrix row count must be greater or equal to 2");
+    static_assert(2 <= C, "matrix column count must be greater or equal to 2");
+
+    constexpr static vec<T, 2> from(const mat<T, R, C>& lhs, const vec<T, 2>& rhs) {
+        vec<T, 2> result{
+            lhs(0, 0) * rhs(0) + lhs(0, 1) * rhs(1) + lhs(0, 2),
+            lhs(1, 0) * rhs(0) + lhs(1, 1) * rhs(1) + rhs(1, 2)
+        };
+
+        return result;
+    }
+};
+
+template <typename T, std::size_t R, std::size_t C>
+struct affine_map_to<3, T, R, C, 3> {
+    static_assert(3 <= R, "matrix row count must be greater or equal to 3");
+    static_assert(3 <= C, "matrix column count must be greater or equal to 3");
+
+    constexpr static vec<T, 3> from(const mat<T, R, C>& lhs, const vec<T, 3>& rhs) {
+        vec<T, 3> result{
+            lhs(0, 0) * rhs(0) + lhs(0, 1) * rhs(1) + lhs(0, 2) * rhs(2) + lhs(0, 3),
+            lhs(1, 0) * rhs(0) + lhs(1, 1) * rhs(1) + lhs(1, 2) * rhs(2) + lhs(1, 3),
+            lhs(2, 0) * rhs(0) + lhs(2, 1) * rhs(1) + lhs(2, 2) * rhs(2) + lhs(2, 3)
+        };
+
+        return result;
+    }
+};
+
+template <typename T, std::size_t D, std::size_t... Is>
+constexpr vec<T, D - 1> perspective_division(const vec<T, D>& h, std::index_sequence<Is...>) {
+    return {h(Is) / h(D - 1)...};
+}
+
+template <std::size_t DO, typename T, std::size_t R, std::size_t C, std::size_t DI>
+struct projective_map_to {
+    static_assert(DO < R, "matrix row count must be greater than output dimension");
+    static_assert(DI < C, "matrix column count must be greater than input dimension");
+
+    constexpr static vec<T, DO> from(const mat<T, R, C>& lhs, const vec<T, DI>& rhs) {
+        vec<T, DO + 1> result{};
+
+        for (std::size_t r = 0; r < DO + 1; ++ r) {
+            for (std::size_t c = 0; c < DI; ++ c) {
+                result(r) += lhs(r, c) * rhs(c);
+            }
+
+            result(r) += lhs(r, DI);
+        }
+
+        return perspective_division(result, std::make_index_sequence<DO>());
+    }
+};
+
+template <typename T, std::size_t R, std::size_t C>
+struct projective_map_to<2, T, R, C, 2> {
+    static_assert(2 < R, "matrix row count must be greater than 2");
+    static_assert(2 < C, "matrix column count must be greater than 2");
+
+    constexpr static vec<T, 2> from(const mat<T, R, C>& lhs, const vec<T, 2>& rhs) {
+        vec<T, 2> result{
+            lhs(0, 0) * rhs(0) + lhs(0, 1) * rhs(1) + lhs(0, 2),
+            lhs(1, 0) * rhs(0) + lhs(1, 1) * rhs(1) + rhs(1, 2)
+        };
+
+        T denum = lhs(2, 0) * rhs(0) + lhs(2, 1) * rhs(1) + rhs(2, 2);
+
+        return result / denum;
+    }
+};
+
+template <typename T, std::size_t R, std::size_t C>
+struct projective_map_to<3, T, R, C, 3> {
+    static_assert(3 < R, "matrix row count must be greater than 3");
+    static_assert(3 < C, "matrix column count must be greater than 3");
+
+    constexpr static vec<T, 3> from(const mat<T, R, C>& lhs, const vec<T, 3>& rhs) {
+        vec<T, 3> result{
+            lhs(0, 0) * rhs(0) + lhs(0, 1) * rhs(1) + lhs(0, 2) * rhs(2) + lhs(0, 3),
+            lhs(1, 0) * rhs(0) + lhs(1, 1) * rhs(1) + lhs(1, 2) * rhs(2) + lhs(1, 3),
+            lhs(2, 0) * rhs(0) + lhs(2, 1) * rhs(1) + lhs(2, 2) * rhs(2) + lhs(2, 3)
+        };
+
+        T denum = lhs(3, 0) * rhs(0) + lhs(3, 1) * rhs(1) + lhs(3, 2) * rhs(2) + lhs(3, 3);
+
+        return result / denum;
+    }
+};
+
+} // namespace detail
+
+template <std::size_t DO, typename T, std::size_t R, std::size_t C, std::size_t DI>
+constexpr vec<T, DO> linear_map_to(const mat<T, R, C>& lhs, const vec<T, DI>& rhs) {
+    return detail::linear_map_to<DO, T, R, C, DI>::from(lhs, rhs);
+}
+
+template <typename T, std::size_t R, std::size_t C, std::size_t D>
+constexpr vec<T, D> linear_map(const mat<T, R, C>& lhs, const vec<T, D>& rhs) {
+    return detail::linear_map_to<D, T, R, C, D>::from(lhs, rhs);
+}
+
+template <std::size_t DO, typename T, std::size_t R, std::size_t C, std::size_t DI>
+constexpr vec<T, DO> affine_map_to(const mat<T, R, C>& lhs, const vec<T, DI>& rhs) {
+    return detail::affine_map_to<DO, T, R, C, DI>::from(lhs, rhs);
+}
+
+template <typename T, std::size_t R, std::size_t C, std::size_t D>
+constexpr vec<T, D> affine_map(const mat<T, R, C>& lhs, const vec<T, D>& rhs) {
+    return detail::affine_map_to<D, T, R, C, D>::from(lhs, rhs);
+}
+
+template <std::size_t DO, typename T, std::size_t R, std::size_t C, std::size_t DI>
+constexpr vec<T, DO> projective_map_to(const mat<T, R, C>& lhs, const vec<T, DI>& rhs) {
+    return detail::projective_map_to<DO, T, R, C, DI>::from(lhs, rhs);
+}
+
+template <typename T, std::size_t R, std::size_t C, std::size_t D>
+constexpr vec<T, D> projective_map(const mat<T, R, C>& lhs, const vec<T, D>& rhs) {
+    return detail::projective_map_to<D, T, R, C, D>::from(lhs, rhs);
 }
 
 } // namespace math
