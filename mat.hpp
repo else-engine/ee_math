@@ -93,12 +93,20 @@ struct mat {
 
     T data[size];
 
-    inline constexpr auto& operator()(std::size_t r, std::size_t c) {
+    inline constexpr reference operator()(std::size_t r, std::size_t c) {
         return data[mat_rc_to_i({r, c}, {R, C})];
     }
 
-    inline constexpr const auto& operator()(std::size_t r, std::size_t c) const {
+    inline constexpr const_reference operator()(std::size_t r, std::size_t c) const {
         return data[mat_rc_to_i({r, c}, {R, C})];
+    }
+
+    inline constexpr reference operator[](std::size_t index) {
+        return data[index];
+    }
+
+    inline constexpr const_reference operator[](std::size_t index) const {
+        return data[index];
     }
 
     inline constexpr explicit operator bool() const {

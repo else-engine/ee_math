@@ -14,6 +14,8 @@
 namespace ee {
 namespace math {
 
+// FIXME nonstandard extension used : nameless struct/union
+
 /**
  * Generic vector template.
  */
@@ -32,12 +34,20 @@ struct vec {
 
     T data[size];
 
-    inline constexpr auto& operator()(std::size_t d) {
+    inline constexpr reference operator()(std::size_t d) {
         return data[d];
     }
 
-    inline constexpr const auto& operator()(std::size_t d) const {
+    inline constexpr const_reference operator()(std::size_t d) const {
         return data[d];
+    }
+
+    inline constexpr reference operator[](std::size_t index) {
+        return data[index];
+    }
+
+    inline constexpr const_reference operator[](std::size_t index) const {
+        return data[index];
     }
 
     inline constexpr explicit operator bool() const {
@@ -92,12 +102,20 @@ struct vec<T, 1> {
         struct { T i; };
     };
 
-    inline constexpr auto& operator()(std::size_t d) {
+    inline constexpr reference operator()(std::size_t d) {
         return data[d];
     }
 
-    inline constexpr const auto& operator()(std::size_t d) const {
+    inline constexpr const_reference operator()(std::size_t d) const {
         return data[d];
+    }
+
+    inline constexpr reference operator[](std::size_t index) {
+        return data[index];
+    }
+
+    inline constexpr const_reference operator[](std::size_t index) const {
+        return data[index];
     }
 
     inline constexpr explicit operator bool() const {
@@ -134,12 +152,20 @@ struct vec<T, 2> {
         struct { T w, h; };
     };
 
-    inline constexpr auto& operator()(std::size_t d) {
+    inline constexpr reference operator()(std::size_t d) {
         return data[d];
     }
 
-    inline constexpr const auto& operator()(std::size_t d) const {
+    inline constexpr const_reference operator()(std::size_t d) const {
         return data[d];
+    }
+
+    inline constexpr reference operator[](std::size_t index) {
+        return data[index];
+    }
+
+    inline constexpr const_reference operator[](std::size_t index) const {
+        return data[index];
     }
 
     inline constexpr explicit operator bool() const {
@@ -178,12 +204,20 @@ struct vec<T, 3> {
         vec<T, 2> ij;
     };
 
-    inline constexpr auto& operator()(std::size_t d) {
+    inline constexpr reference operator()(std::size_t d) {
         return data[d];
     }
 
-    inline constexpr const auto& operator()(std::size_t d) const {
+    inline constexpr const_reference operator()(std::size_t d) const {
         return data[d];
+    }
+
+    inline constexpr reference operator[](std::size_t index) {
+        return data[index];
+    }
+
+    inline constexpr const_reference operator[](std::size_t index) const {
+        return data[index];
     }
 
     inline constexpr explicit operator bool() const {
@@ -226,12 +260,20 @@ struct vec<T, 4> {
         struct { vec<T, 2> ij, kl; };
     };
 
-    inline constexpr auto& operator()(std::size_t d) {
+    inline constexpr reference operator()(std::size_t d) {
         return data[d];
     }
 
-    inline constexpr const auto& operator()(std::size_t d) const {
+    inline constexpr const_reference operator()(std::size_t d) const {
         return data[d];
+    }
+
+    inline constexpr reference operator[](std::size_t index) {
+        return data[index];
+    }
+
+    inline constexpr const_reference operator[](std::size_t index) const {
+        return data[index];
     }
 
     inline constexpr explicit operator bool() const {

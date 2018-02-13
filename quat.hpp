@@ -37,12 +37,20 @@ struct quat {
         vec<T, 3> xyz;
     };
 
-    inline constexpr auto& operator()(std::size_t i) {
-        return data[i];
+    inline constexpr reference operator()(std::size_t d) {
+        return data[d];
     }
 
-    inline constexpr const auto& operator()(std::size_t i) const {
-        return data[i];
+    inline constexpr const_reference operator()(std::size_t d) const {
+        return data[d];
+    }
+
+    inline constexpr reference operator[](std::size_t index) {
+        return data[index];
+    }
+
+    inline constexpr const_reference operator[](std::size_t index) const {
+        return data[index];
     }
 
     inline constexpr explicit operator bool() const {
