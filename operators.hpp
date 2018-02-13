@@ -221,7 +221,7 @@ constexpr auto operator+(const T& lhs, const T& rhs) {
  * Subtraction.
  * For mat and vec.
  */
-template <typename T>
+template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
 constexpr auto operator-(const T& lhs, const T& rhs) {
     T result{lhs};
 
@@ -294,6 +294,62 @@ constexpr const auto& operator-=(T& lhs, const T& rhs) {
     }
 
     return lhs;
+}
+
+/**
+ * Bit shift operators
+ */
+
+/**
+ * Leftshift assignment.
+ * For mat and vec.
+ */
+template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
+constexpr const auto& operator<<=(LT& lhs, RT rhs) {
+    for (std::size_t i = 0; i < LT::size; ++ i) {
+        lhs.data[i] <<= rhs;
+    }
+
+    return lhs;
+}
+
+/**
+ * Leftshift.
+ * For mat and vec.
+ */
+template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
+constexpr auto operator<<(const LT& lhs, RT rhs) {
+    LT result{lhs};
+
+    result <<= rhs;
+
+    return result;
+}
+
+/**
+ * Rightshift assignment.
+ * For mat and vec.
+ */
+template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
+constexpr const auto& operator>>=(LT& lhs, RT rhs) {
+    for (std::size_t i = 0; i < LT::size; ++ i) {
+        lhs.data[i] >>= rhs;
+    }
+
+    return lhs;
+}
+
+/**
+ * Rightshift.
+ * For mat and vec.
+ */
+template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
+constexpr auto operator>>(const LT& lhs, RT rhs) {
+    LT result{lhs};
+
+    result >>= rhs;
+
+    return result;
 }
 
 } // namespace math
