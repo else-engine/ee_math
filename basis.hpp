@@ -26,7 +26,7 @@ namespace math {
 
 struct xpos {
     template <typename T>
-    constexpr static vec<T, 3> v = { T{1L}, T{0L}, T{0L} };
+    constexpr static vec<T, 3> v { T{1L}, T{0L}, T{0L} };
 };
 
 template <typename T>
@@ -34,7 +34,7 @@ constexpr vec<T, 3> xpos::v;
 
 struct ypos {
     template <typename T>
-    constexpr static vec<T, 3> v = { T{0L}, T{1L}, T{0L} };
+    constexpr static vec<T, 3> v { T{0L}, T{1L}, T{0L} };
 };
 
 template <typename T>
@@ -42,7 +42,7 @@ constexpr vec<T, 3> ypos::v;
 
 struct zpos {
     template <typename T>
-    constexpr static vec<T, 3> v = { T{0L}, T{0L}, T{1L} };
+    constexpr static vec<T, 3> v { T{0L}, T{0L}, T{1L} };
 };
 
 template <typename T>
@@ -50,7 +50,7 @@ constexpr vec<T, 3> zpos::v;
 
 struct xneg {
     template <typename T>
-    constexpr static vec<T, 3> v = { T{ - 1L}, T{0L}, T{0L} };
+    constexpr static vec<T, 3> v { T{ - 1L}, T{0L}, T{0L} };
 };
 
 template <typename T>
@@ -58,7 +58,7 @@ constexpr vec<T, 3> xneg::v;
 
 struct yneg {
     template <typename T>
-    constexpr static vec<T, 3> v = { T{0L}, T{ - 1L}, T{0L} };
+    constexpr static vec<T, 3> v { T{0L}, T{ - 1L}, T{0L} };
 };
 
 template <typename T>
@@ -66,7 +66,7 @@ constexpr vec<T, 3> yneg::v;
 
 struct zneg {
     template <typename T>
-    constexpr static vec<T, 3> v = { T{0L}, T{0L}, T{ - 1L} };
+    constexpr static vec<T, 3> v { T{0L}, T{0L}, T{ - 1L} };
 };
 
 template <typename T>
