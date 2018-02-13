@@ -7,219 +7,142 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include <ee_utils/templates.hpp>
 
 #include "common.hpp"
 #include "mat.hpp"
 #include "vec.hpp"
+#include "quat.hpp"
 
 namespace ee {
-namespace cw {
 
 using tutil::eif;
-using math::is_num;
-using math::mat;
-using math::is_mat;
-using math::vec;
-using math::is_vec;
 
+namespace math {
+
+/**
+ * is_tuple. in the mathematical meaning.
+ * To be considered as tuple a class needs :
+ *  - a constexpr static member "size" reporting the number of components.
+ *  - a type member "value_type", the type of the components.
+ *  - a subscript operator which returns value_type references from 0 to size-1.
+ *  - TODO to be an aggregate (needs std::is_aggregate)
+ */
 namespace detail {
 
-template <typename O, std::size_t... Is>
-constexpr auto mul(const O& lhs, const O& rhs, std::index_sequence<Is...>) {
-    return O{lhs.data[Is] * rhs.data[Is]...};
+template <typename T, typename = void>
+struct is_tuple_impl : std::false_type {};
+
+template <typename T>
+struct is_tuple_impl<T, eif<
+tutil::has_subscript_operator<typename T::reference (T::*)(std::size_t)> &&
+tutil::has_subscript_operator<typename T::const_reference (T::*)(std::size_t) const> &&
+T::size * sizeof(typename T::value_type) == sizeof(T)
+>> : std::true_type {};
+
+} // namespace detail
+
+template <typename T>
+constexpr bool is_tuple = detail::is_tuple_impl<T>::value;
+
+/**
+ * Allow calling functions component wise.
+ */
+namespace detail {
+
+/* 1 parameter */
+// tuple
+template <typename F, typename T, std::size_t... Is>
+constexpr eif<is_tuple<T>, T> cw(F&& f, const T& t1, std::index_sequence<Is...>) {
+    return T{f(t1[Is])...};
 }
 
-template <typename O, typename T, std::size_t... Is>
-constexpr auto mul_scalar(const O& lhs, T rhs, std::index_sequence<Is...>) {
-    return O{lhs.data[Is] * rhs...};
+/* 2 parameters */
+// tuple, tuple
+template <typename F, typename T, std::size_t... Is>
+constexpr eif<is_tuple<T>, T> cw(F&& f, const T& t1, const T& t2, std::index_sequence<Is...>) {
+    return T{f(t1[Is], t2[Is])...};
+}
+
+// tuple, scalar
+template <typename F, typename T, typename S, std::size_t... Is>
+constexpr eif<is_tuple<T> && is_num<S>, T> cw(F&& f, const T& t1, S s2, std::index_sequence<Is...>) {
+    return {f(t1[Is], s2)...};
+}
+
+// scalar, tuple
+template <typename F, typename T, typename S, std::size_t... Is>
+constexpr eif<is_tuple<T> && is_num<S>, T> cw(F&& f, S s1, const T& t2, std::index_sequence<Is...>) {
+    return {f(s1, t2[Is])...};
+}
+
+/* 3 parameters */
+// tuple, tuple, tuple
+template <typename F, typename T, std::size_t... Is>
+constexpr eif<is_tuple<T>, T> cw(F&& f, const T& t1, const T& t2, const T& t3, std::index_sequence<Is...>) {
+    return T{f(t1[Is], t2[Is], t3[Is])...};
+}
+
+// tuple, tuple, scalar
+template <typename F, typename T, typename S, std::size_t... Is>
+constexpr eif<is_tuple<T> && is_num<S>, T> cw(F&& f, const T& t1, const T& t2, S s3, std::index_sequence<Is...>) {
+    return {f(t1[Is], t2[Is], s3)...};
+}
+
+// tuple, scalar, tuple
+template <typename F, typename T, typename S, std::size_t... Is>
+constexpr eif<is_tuple<T> && is_num<S>, T> cw(F&& f, const T& t1, S s2, const T& t3, std::index_sequence<Is...>) {
+    return {f(t1[Is], s2, t3[Is])...};
+}
+
+// scalar, tuple, tuple
+template <typename F, typename T, typename S, std::size_t... Is>
+constexpr eif<is_tuple<T> && is_num<S>, T> cw(F&& f, S s1, const T& t2, const T& t3, std::index_sequence<Is...>) {
+    return {f(s1, t2[Is], t3[Is])...};
+}
+
+// tuple, scalar, scalar
+template <typename F, typename T, typename S, std::size_t... Is>
+constexpr eif<is_tuple<T> && is_num<S>, T> cw(F&& f, const T& t1, S s2, S s3, std::index_sequence<Is...>) {
+    return {f(t1[Is], s2, s3)...};
+}
+
+// scalar, tuple, scalar
+template <typename F, typename T, typename S, std::size_t... Is>
+constexpr eif<is_tuple<T> && is_num<S>, T> cw(F&& f, S s1, const T& t2, S s3, std::index_sequence<Is...>) {
+    return {f(s1, t2[Is], s3)...};
+}
+
+// scalar, scalar, tuple
+template <typename F, typename T, typename S, std::size_t... Is>
+constexpr eif<is_tuple<T> && is_num<S>, T> cw(F&& f, S s1, S s2, const T& t3, std::index_sequence<Is...>) {
+    return {f(s1, s2, t3[Is])...};
 }
 
 } // namespace detail
 
-/**
- * Componentwise multiplication.
- * mat * mat
- * vec * vec
- */
-template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
-constexpr auto mul(const T& lhs, const T& rhs) {
-    return detail::mul(lhs, rhs, std::make_index_sequence<T::size>());
+/* 1 parameter */
+template <typename F, typename T>
+constexpr eif<is_tuple<T>, T> cw(F&& f, const T& t) {
+    using tuple = T;
+    return detail::cw(std::forward<F>(f), t, std::make_index_sequence<tuple::size>());
 }
 
-/**
- * Componentwise multiplication.
- * scalar * mat
- * scalar * vec
- */
-template <typename LT, typename RT, typename = eif<is_num<LT> && (is_mat<RT> || is_vec<RT>)>>
-constexpr auto mul(LT lhs, const RT& rhs) {
-    return detail::mul_scalar(rhs, lhs, std::make_index_sequence<RT::size>());
+/* 2 parameters */
+template <typename F, typename T1, typename T2>
+constexpr eif<is_tuple<T1> || is_tuple<T2>, std::conditional_t<is_tuple<T1>, T1, T2>> cw(F&& f, const T1& t1, const T2& t2) {
+    using tuple = std::conditional_t<is_tuple<T1>, T1, T2>;
+    return detail::cw(std::forward<F>(f), t1, t2, std::make_index_sequence<tuple::size>());
 }
 
-/**
- * Componentwise multiplication.
- * mat * scalar
- * vec * scalar
- */
-template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
-constexpr auto mul(const LT& lhs, RT rhs) {
-    return detail::mul_scalar(lhs, rhs, std::make_index_sequence<LT::size>());
+/* 3 parameters */
+template <typename F, typename T1, typename T2, typename T3>
+constexpr eif<is_tuple<T1> || is_tuple<T2> || is_tuple<T3>, std::conditional_t<is_tuple<T1>, T1, std::conditional_t<is_tuple<T2>, T2, T3>>> cw(F&& f, const T1& t1, const T2& t2, const T3& t3) {
+    using tuple = std::conditional_t<is_tuple<T1>, T1, std::conditional_t<is_tuple<T2>, T2, T3>>;
+    return detail::cw(std::forward<F>(f), t1, t2, t3, std::make_index_sequence<tuple::size>());
 }
 
-namespace detail {
-
-template <typename O, std::size_t... Is>
-constexpr auto div(const O& lhs, const O& rhs, std::index_sequence<Is...>) {
-    return O{lhs.data[Is] / rhs.data[Is]...};
-}
-
-template <typename O, typename T, std::size_t... Is, typename = eif<is_num<T>>>
-constexpr auto div_scalar(const O& lhs, T rhs, std::index_sequence<Is...>) {
-    return O{lhs.data[Is] / rhs...};
-}
-
-template <typename T, typename O, std::size_t... Is, typename = eif<is_num<T>>>
-constexpr auto div_scalar(T lhs, const O& rhs, std::index_sequence<Is...>) {
-    return O{lhs / rhs.data[Is]...};
-}
-
-} // namespace detail
-
-/**
- * Componentwise division.
- * mat / mat
- * vec / vec
- */
-template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
-constexpr auto div(const T& lhs, const T& rhs) {
-    return detail::div(lhs, rhs, std::make_index_sequence<T::size>());
-}
-
-/**
- * Componentwise division.
- * mat / scalar
- * vec / scalar
- */
-template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
-constexpr auto div(const LT& lhs, RT rhs) {
-    return detail::div_scalar(lhs, rhs, std::make_index_sequence<LT::size>());
-}
-
-/**
- * Componentwise division.
- * scalar / mat
- * scalar / vec
- */
-template <typename LT, typename RT, typename = eif<is_num<LT> && (is_mat<RT> || is_vec<RT>)>>
-constexpr auto div(LT lhs, const RT& rhs) {
-    return detail::div_scalar(lhs, rhs, std::make_index_sequence<RT::size>());
-}
-
-namespace detail {
-
-template <typename O, std::size_t... Is>
-constexpr auto add(const O& lhs, const O& rhs, std::index_sequence<Is...>) {
-    return O{lhs.data[Is] + rhs.data[Is]...};
-}
-
-template <typename O, typename T, std::size_t... Is>
-constexpr auto add_scalar(const O& lhs, T rhs, std::index_sequence<Is...>) {
-    return O{lhs.data[Is] + rhs...};
-}
-
-} // namespace detail
-
-/**
- * Componentwise addition.
- * mat + mat
- * vec + vec
- */
-template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
-constexpr auto add(const T& lhs, const T& rhs) {
-    return detail::add(lhs, rhs, std::make_index_sequence<T::size>());
-}
-
-/**
- * Componentwise addition.
- * scalar + mat
- * scalar + vec
- */
-template <typename LT, typename RT, typename = eif<is_num<LT> && (is_mat<RT> || is_vec<RT>)>>
-constexpr auto add(LT lhs, const RT& rhs) {
-    return detail::add_scalar(rhs, lhs, std::make_index_sequence<RT::size>());
-}
-
-/**
- * Componentwise addition.
- * mat + scalar
- * vec + scalar
- */
-template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
-constexpr auto add(const LT& lhs, RT rhs) {
-    return detail::add_scalar(lhs, rhs, std::make_index_sequence<LT::size>());
-}
-
-/**
- * Componentwise addition in place.
- * mat += scalar
- * vec += scalar
- */
-template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
-constexpr void add(LT* lhs, RT rhs) {
-    for (std::size_t i = 0; i < LT::size; ++ i) {
-        lhs->data[i] += rhs;
-    }
-}
-
-namespace detail {
-
-template <typename O, std::size_t... Is>
-constexpr auto sub(const O& lhs, const O& rhs, std::index_sequence<Is...>) {
-    return O{lhs.data[Is] - rhs.data[Is]...};
-}
-
-template <typename O, typename T, std::size_t... Is, typename = eif<is_num<T>>>
-constexpr auto sub_scalar(const O& lhs, T rhs, std::index_sequence<Is...>) {
-    return O{lhs.data[Is] - rhs...};
-}
-
-template <typename T, typename O, std::size_t... Is, typename = eif<is_num<T>>>
-constexpr auto sub_scalar(T lhs, const O& rhs, std::index_sequence<Is...>) {
-    return O{lhs - rhs.data[Is]...};
-}
-
-} // namespace detail
-
-/**
- * Componentwise subtraction.
- * mat - mat
- * vec - vec
- */
-template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
-constexpr auto sub(const T& lhs, const T& rhs) {
-    return detail::sub(lhs, rhs, std::make_index_sequence<T::size>());
-}
-
-/**
- * Componentwise subtraction.
- * mat - scalar
- * vec - scalar
- */
-template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
-constexpr auto sub(const LT& lhs, RT rhs) {
-    return detail::sub_scalar(lhs, rhs, std::make_index_sequence<LT::size>());
-}
-
-/**
- * Componentwise subtraction.
- * scalar - mat
- * scalar - vec
- */
-template <typename LT, typename RT, typename = eif<is_num<LT> && (is_mat<RT> || is_vec<RT>)>>
-constexpr auto sub(LT lhs, const RT& rhs) {
-    return detail::sub_scalar(lhs, rhs, std::make_index_sequence<RT::size>());
-}
-
-} // namespace cw
+} // namespace math
 } // namespace ee
