@@ -8,7 +8,6 @@
 #pragma once
 
 #include <cmath>
-#include <algorithm>
 
 #include <ee_utils/templates.hpp>
 
@@ -27,9 +26,9 @@ using tutil::eif;
  * Addition.
  */
 constexpr struct {
-    template <typename T>
-    constexpr T operator()(T lhs, T rhs) const {
-        return lhs + rhs;
+    template <typename... Ts>
+    constexpr auto operator()(Ts... vs) const {
+        return (vs + ...);
     }
 } add;
 
@@ -47,9 +46,9 @@ constexpr struct {
  * Multiplication.
  */
 constexpr struct {
-    template <typename T>
-    constexpr T operator()(T lhs, T rhs) const {
-        return lhs * rhs;
+    template <typename... Ts>
+    constexpr auto operator()(Ts... vs) const {
+        return (vs * ...);
     }
 } mul;
 
@@ -63,6 +62,37 @@ constexpr struct {
     }
 } div;
 
+
+/**
+ * Opposite.
+ */
+constexpr struct {
+    template <typename T>
+    constexpr T operator()(T rhs) const {
+        return - rhs;
+    }
+} opp;
+
+/**
+ * Bitwise left shift.
+ */
+constexpr struct {
+    template <typename T>
+    constexpr T operator()(T lhs, T rhs) const {
+        return lhs << rhs;
+    }
+} lshift;
+
+/**
+ * Bitwise right shift.
+ */
+constexpr struct {
+    template <typename T>
+    constexpr T operator()(T lhs, T rhs) const {
+        return lhs >> rhs;
+    }
+} rshift;
+
 /**
  * Sign function.
  * Returns -1 if v is negative, +1 if it is positive, 0 otherwise.
@@ -75,43 +105,49 @@ constexpr struct {
 } sgn;
 
 /**
- * Modulo for floating point types.
+ * Trunc.
  */
 constexpr struct {
     template <typename T>
-    constexpr eif<std::is_floating_point<T>::value, T> operator()(T lhs, T rhs) const {
-        return lhs - static_cast<long long>(lhs / rhs) * rhs;
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value) const {
+        return std::trunc(value);
     }
-} fmod;
+
+    template <typename T>
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value) const {
+        return value;
+    }
+} trunc;
+
+/**
+ * Modulo.
+ */
+constexpr struct {
+    template <typename T>
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T lhs, T rhs) const {
+        return std::remainder(lhs, rhs);
+        //return lhs - trunc(lhs / rhs) * rhs;
+    }
+
+    template <typename T>
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T lhs, T rhs) const {
+        return lhs % rhs;
+    }
+} mod;
 
 /**
  * Round.
- * Round down to nearest integer or nearest multiple of significance lesser or
- * equal to input.
  */
-namespace detail {
-
-template <typename T>
-constexpr T round_impl(T value, std::true_type, std::true_type) {
-    return static_cast<long long>(value + T{0.5L} * math::sgn(value));
-}
-
-template <typename T>
-constexpr T round_impl(T value, std::false_type, std::false_type) {
-    return value;
-}
-
-template <typename T>
-constexpr T round_impl(T value, std::false_type, std::true_type) {
-    return value;
-}
-
-} // namespace detail
-
 constexpr struct {
     template <typename T>
-    constexpr T operator()(T value) const {
-        return detail::round_impl(value, std::is_floating_point<T>(), std::is_signed<T>());
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value) const {
+        return std::round(value);
+        //return trunc(value + T{0.5L} * sgn(value));
+    }
+
+    template <typename T>
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value) const {
+        return value;
     }
 } round;
 
@@ -120,64 +156,34 @@ constexpr struct {
  * Round down to nearest integer or nearest multiple of significance lesser or
  * equal to input.
  */
-namespace detail {
-
-template <typename T>
-constexpr T floor_impl(T value, std::true_type, std::true_type) {
-    if (value < T{0L}) {
-        T mod = value - static_cast<long long>(value);
-        return value - (mod ? T{1L} + mod : T{0L});
-    }
-
-    return value - fmod(value, T{1L});
-}
-
-template <typename T>
-constexpr T floor_impl(T value, std::false_type, std::false_type) {
-    return value;
-}
-
-template <typename T>
-constexpr T floor_impl(T value, std::false_type, std::true_type) {
-    return value;
-}
-
-template <typename T>
-constexpr T floor_impl(T value, T significance, std::true_type, std::true_type) {
-    if (value < T{0L}) {
-        T mod = fmod(value, significance);
-        return value - (mod ? significance + mod : T{0L});
-    }
-
-    return value - fmod(value, significance);
-}
-
-template <typename T>
-constexpr T floor_impl(T value, T significance, std::false_type, std::false_type) {
-    return value - value % significance;
-}
-
-template <typename T>
-constexpr T floor_impl(T value, T significance, std::false_type, std::true_type) {
-    if (value < T{0L}) {
-        T value_plus_one = value + T{1L};
-        return value_plus_one - significance - value_plus_one % significance;
-    }
-
-    return value - value % significance;
-}
-
-} // namespace detail
-
 constexpr struct {
     template <typename T>
-    constexpr T operator()(T value) const {
-        return detail::floor_impl(value, std::is_floating_point<T>(), std::is_signed<T>());
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value) const {
+        return std::floor(value);
+        //T remainder = value - trunc(value);
+        //return value - remainder - (remainder < T{0L} ? T{1L} : T{0L});
     }
 
     template <typename T>
-    constexpr T operator()(T value, T significance) const {
-        return detail::floor_impl(value, significance, std::is_floating_point<T>(), std::is_signed<T>());
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value) const {
+        return value;
+    }
+
+    template <typename T>
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value, T significance) const {
+        T remainder = mod(value, significance);
+        return value - remainder - (remainder < T{0L} ? significance : T{0L});
+    }
+
+    template <typename T>
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value, T significance) const {
+#if 0
+        T remainder = mod(value, significance);
+        return value - remainder - (remainder < T{0L} ? significance : T{0L});
+#else
+        value += value < T{0L} ? T{1L} - significance : T{0L};
+        return value - mod(value, significance);
+#endif
     }
 } floor;
 
@@ -186,109 +192,91 @@ constexpr struct {
  * Round up to nearest integer or nearest multiple of significance greater or
  * equal to input.
  */
-namespace detail {
-
-template <typename T>
-constexpr T ceil_impl(T value, std::true_type, std::true_type) {
-    if (value > T{0L}) {
-        T mod = value - static_cast<long long>(value);
-        return value + (mod ? T{1L} - mod : T{0L});
-    }
-
-    return value - fmod(value, T{1L});
-}
-
-template <typename T>
-constexpr T ceil_impl(T value, std::false_type, std::false_type) {
-    return value;
-}
-
-template <typename T>
-constexpr T ceil_impl(T value, std::false_type, std::true_type) {
-    return value;
-}
-
-template <typename T>
-constexpr T ceil_impl(T value, T significance, std::true_type, std::true_type) {
-    if (value > T{0L}) {
-        T mod = fmod(value, significance);
-        return value + (mod ? significance - mod : T{0L});
-    }
-
-    return value - fmod(value, significance);
-}
-
-template <typename T>
-constexpr T ceil_impl(T value, T significance, std::false_type, std::false_type) {
-    T value_minus_one = value - T{1L};
-    return value_minus_one + significance - value_minus_one % significance;
-}
-
-template <typename T>
-constexpr T ceil_impl(T value, T significance, std::false_type, std::true_type) {
-    if (value > T{0L}) {
-        T value_minus_one = value - T{1L};
-        return value_minus_one + significance - value_minus_one % significance;
-    }
-
-    return value - value % significance;
-}
-
-} // namespace detail
-
 constexpr struct {
     template <typename T>
-    constexpr T operator()(T value) const {
-        return detail::ceil_impl(value, std::is_floating_point<T>(), std::is_signed<T>());
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value) const {
+        return std::ceil(value);
+        //T remainder = value - trunc(value);
+        //return value - remainder + (remainder > T{0L} ? T{1L} : T{0L});
     }
 
     template <typename T>
-    constexpr T operator()(T value, T significance) const {
-        return detail::ceil_impl(value, significance, std::is_floating_point<T>(), std::is_signed<T>());
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value) const {
+        return value;
+    }
+
+    template <typename T>
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value, T significance) const {
+        T remainder = mod(value, significance);
+        return value - remainder + (remainder > T{0L} ? significance : T{0L});
+    }
+
+    template <typename T>
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value, T significance) const {
+#if 0
+        T remainder = mod(value, significance);
+        return value - remainder + (remainder > T{0L} ? significance : T{0L});
+#else
+        value += value >= T{0L} ? significance - T{1L} : T{0L};
+        return value - mod(value, significance);
+#endif
     }
 } ceil;
-
-/**
- * Clamp value between minimum and maximum.
- */
-constexpr struct {
-    template <typename T>
-    constexpr T operator()(T value, T minimum, T maximum) const {
-        T result = std::max(std::min(value, maximum), minimum);
-
-        return result;
-    }
-} clamp;
 
 /**
  * Absolute value.
  */
 constexpr struct {
     template <typename T>
-    constexpr T operator()(T v) const {
-        return std::abs(v);
+    /*constexpr*/ eif< ! std::is_unsigned<T>::value, T> operator()(T value) const {
+        return std::abs(value);
+    }
+
+    template <typename T>
+    constexpr eif<std::is_unsigned<T>::value, T> operator()(T value) const {
+        return value;
     }
 } abs;
 
 /**
- * Minimum of two values.
+ * Minimum from a list of values.
  */
 constexpr struct {
     template <typename T>
-    constexpr T operator()(T lhs, T rhs) const {
-        return std::min(lhs, rhs);
+    constexpr const T& operator()(const T& f) const {
+        return f;
+    }
+
+    template <typename T, typename... Rs>
+    constexpr const T& operator()(const T& f, const T& s, const Rs&... rs) const {
+        return (*this)(s < f ? s : f, rs...);;
     }
 } min;
 
 /**
- * Maximum of two values.
+ * Maximum from a list of values.
  */
 constexpr struct {
     template <typename T>
-    constexpr T operator()(T lhs, T rhs) const {
-        return std::max(lhs, rhs);
+    constexpr const T& operator()(const T& f) const {
+        return f;
+    }
+
+    template <typename T, typename... Rs>
+    constexpr const T& operator()(const T& f, const T& s, const Rs&... rs) const {
+        return (*this)(f < s ? s : f, rs...);
     }
 } max;
+
+/**
+ * Clamp value between lo and hi.
+ */
+constexpr struct {
+    template <typename T>
+    constexpr const T& operator()(const T& v, const T& lo, const T& hi) const {
+        return lo < v ? hi < v ? hi : v : lo;
+    }
+} clamp;
 
 /**
  * Return linear interpolation bewteen v1 and v2 using weight.

@@ -10,8 +10,9 @@
 #include "mat.hpp"
 #include "vec.hpp"
 #include "quat.hpp"
-#include "generators.hpp"
-#include "iterators.hpp"
+#include "common.hpp"
+#include "functions.hpp"
+#include "componentwise.hpp"
 
 namespace ee {
 namespace math {
@@ -104,22 +105,13 @@ constexpr auto operator+(const T& rhs) {
     return rhs;
 }
 
-namespace detail {
-
-template <typename T, std::size_t... Is>
-constexpr auto opposite(const T& t, std::index_sequence<Is...>) {
-    return T{ - t.data[Is]...};
-}
-
-} // namespace detail
-
 /**
  * Opposite.
  * For mat and vec.
  */
 template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
 constexpr auto operator-(const T& rhs) {
-    return detail::opposite(rhs, std::make_index_sequence<T::size>());
+    return cwise(opp, rhs);
 }
 
 /**
@@ -175,11 +167,7 @@ constexpr auto operator*(const mat<T, R, C>& lhs, const vec<T, C>& rhs) {
  */
 template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
 constexpr auto operator*(const LT& lhs, RT rhs) {
-    LT result{lhs};
-
-    result *= rhs;
-
-    return result;
+    return cwise(mul, lhs, rhs);
 }
 
 /**
@@ -188,7 +176,7 @@ constexpr auto operator*(const LT& lhs, RT rhs) {
  */
 template <typename LT, typename RT, typename = eif<is_num<LT> && (is_mat<RT> || is_vec<RT>)>>
 constexpr auto operator*(LT lhs, const RT& rhs) {
-    return rhs * lhs; // reverse order
+    return cwise(mul, lhs, rhs);
 }
 
 /**
@@ -197,11 +185,7 @@ constexpr auto operator*(LT lhs, const RT& rhs) {
  */
 template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
 constexpr auto operator/(const LT& lhs, RT rhs) {
-    LT result{lhs};
-
-    result /= rhs;
-
-    return result;
+    return cwise(div, lhs, rhs);
 }
 
 /**
@@ -210,11 +194,7 @@ constexpr auto operator/(const LT& lhs, RT rhs) {
  */
 template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
 constexpr auto operator+(const T& lhs, const T& rhs) {
-    T result{lhs};
-
-    result += rhs;
-
-    return result;
+    return cwise(add, lhs, rhs);
 }
 
 /**
@@ -223,11 +203,7 @@ constexpr auto operator+(const T& lhs, const T& rhs) {
  */
 template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
 constexpr auto operator-(const T& lhs, const T& rhs) {
-    T result{lhs};
-
-    result -= rhs;
-
-    return result;
+    return cwise(sub, lhs, rhs);
 }
 
 /**
@@ -250,11 +226,7 @@ constexpr const auto& operator*=(mat<T, R, C>& lhs, const mat<T, R, C>& rhs) {
  */
 template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
 constexpr const auto& operator*=(LT& lhs, RT rhs) {
-    for (std::size_t i = 0; i < LT::size; ++ i) {
-        lhs.data[i] *= rhs;
-    }
-
-    return lhs;
+    return lhs = cwise(mul, lhs, rhs);
 }
 
 /**
@@ -263,11 +235,7 @@ constexpr const auto& operator*=(LT& lhs, RT rhs) {
  */
 template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
 constexpr const auto& operator/=(LT& lhs, RT rhs) {
-    for (std::size_t i = 0; i < LT::size; ++ i) {
-        lhs.data[i] /= rhs;
-    }
-
-    return lhs;
+    return lhs = cwise(div, lhs, rhs);
 }
 
 /**
@@ -276,11 +244,7 @@ constexpr const auto& operator/=(LT& lhs, RT rhs) {
  */
 template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
 constexpr const auto& operator+=(T& lhs, const T& rhs) {
-    for (std::size_t i = 0; i < T::size; ++ i) {
-        lhs.data[i] += rhs.data[i];
-    }
-
-    return lhs;
+    return lhs = cwise(add, lhs, rhs);
 }
 
 /**
@@ -289,11 +253,7 @@ constexpr const auto& operator+=(T& lhs, const T& rhs) {
  */
 template <typename T, typename = eif<is_mat<T> || is_vec<T>>>
 constexpr const auto& operator-=(T& lhs, const T& rhs) {
-    for (std::size_t i = 0; i < T::size; ++ i) {
-        lhs.data[i] -= rhs.data[i];
-    }
-
-    return lhs;
+    return lhs = cwise(sub, lhs, rhs);
 }
 
 /**
@@ -306,11 +266,7 @@ constexpr const auto& operator-=(T& lhs, const T& rhs) {
  */
 template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
 constexpr const auto& operator<<=(LT& lhs, RT rhs) {
-    for (std::size_t i = 0; i < LT::size; ++ i) {
-        lhs.data[i] <<= rhs;
-    }
-
-    return lhs;
+    return lhs = cwise(lshift, lhs, rhs);
 }
 
 /**
@@ -319,11 +275,7 @@ constexpr const auto& operator<<=(LT& lhs, RT rhs) {
  */
 template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
 constexpr auto operator<<(const LT& lhs, RT rhs) {
-    LT result{lhs};
-
-    result <<= rhs;
-
-    return result;
+    return cwise(lshift, lhs, rhs);
 }
 
 /**
@@ -332,11 +284,7 @@ constexpr auto operator<<(const LT& lhs, RT rhs) {
  */
 template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
 constexpr const auto& operator>>=(LT& lhs, RT rhs) {
-    for (std::size_t i = 0; i < LT::size; ++ i) {
-        lhs.data[i] >>= rhs;
-    }
-
-    return lhs;
+    return lhs = cwise(rshift, lhs, rhs);
 }
 
 /**
@@ -345,11 +293,7 @@ constexpr const auto& operator>>=(LT& lhs, RT rhs) {
  */
 template <typename LT, typename RT, typename = eif<(is_mat<LT> || is_vec<LT>) && is_num<RT>>>
 constexpr auto operator>>(const LT& lhs, RT rhs) {
-    LT result{lhs};
-
-    result >>= rhs;
-
-    return result;
+    return cwise(rshift, lhs, rhs);
 }
 
 } // namespace math

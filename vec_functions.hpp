@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include "vec.hpp"
+#include "iterators.hpp"
 
 namespace ee {
 namespace math {
