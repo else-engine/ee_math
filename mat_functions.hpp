@@ -22,10 +22,11 @@ namespace math {
 template <typename T>
 constexpr mat<T, 4, 4> perspective(T fovy, T aspect, T near, T far) {
     const T d = T{1L} / std::tan(fovy * T{0.5L});
-    const T near_m_far = near - far;
 
 #if 1
     // OpenGL
+    const T near_m_far = near - far;
+
     return {
         d / aspect, T{0L},             T{0L}              ,   T{0L},
           T{0L}   ,   d  ,             T{0L}              ,   T{0L},
@@ -68,6 +69,32 @@ constexpr mat<T, 4, 4> perspective_inverse(T fovy, T aspect, T near, T far) {
             T{0L}     , rcp_d,        T{0L}     ,   T{0L} ,
             T{0L}     , T{0L},        T{0L}     ,   T{1L} ,
             T{0L}     , T{0L}, (near - far) / nf, far / nf};
+#endif
+}
+
+/**
+ * Inverse of standard perspective projection.
+ * To avoid computing inverse.
+ * Found empirically.
+ */
+template <typename T>
+constexpr mat<T, 4, 4> perspective_inverse(const mat<T, 4, 4>& H_V) {
+#if 1
+    // OpenGL
+    return {
+        T{1L} / H_V(0, 0),      T{0L}      ,   T{0L},        T{0L}         ,
+              T{0L}      , T{1} / H_V(1, 1),   T{0L},        T{0L}         ,
+              T{0L}      ,      T{0L}      ,   T{0L},   T{1L} / H_V(2, 3)  ,
+              T{0L}      ,      T{0L}      , - T{1L}, H_V(2, 2) / H_V(2, 3)};
+#else
+    // DirectX
+    const T nf    = near * far;
+
+    return {
+        T{1L} / H_V(0, 0),      T{0L}      ,        T{0L}     ,         T{0L}        ,
+              T{0L}      , T{1} / H_V(1, 1),        T{0L}     ,         T{0L}        ,
+              T{0L}      ,      T{0L}      ,        T{0L}     ,         T{1L}        ,
+              T{0L}      ,      T{0L}      , T{1L} / H_V(3, 2), H_V(2, 2) / H_V(3, 2)};
 #endif
 }
 
