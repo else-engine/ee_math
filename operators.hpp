@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 Gauthier ARNOULD
+ * Copyright (c) 2017-2018 Gauthier ARNOULD
  * This file is released under the zlib License (Zlib).
  * See file LICENSE or go to https://opensource.org/licenses/Zlib
  * for full license details.
@@ -7,12 +7,13 @@
 
 #pragma once
 
+#include <ee_utils/componentwise.hpp>
+
 #include "mat.hpp"
 #include "vec.hpp"
 #include "quat.hpp"
 #include "common.hpp"
 #include "functions.hpp"
-#include "componentwise.hpp"
 
 namespace ee {
 namespace math {

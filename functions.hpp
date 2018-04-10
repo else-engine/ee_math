@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 Gauthier ARNOULD
+ * Copyright (c) 2017-2018 Gauthier ARNOULD
  * This file is released under the zlib License (Zlib).
  * See file LICENSE or go to https://opensource.org/licenses/Zlib
  * for full license details.
@@ -27,7 +27,7 @@ using tutil::eif;
  */
 constexpr struct {
     template <typename... Ts>
-    constexpr auto operator()(Ts... vs) const {
+    constexpr auto operator()(Ts... vs) const noexcept {
         return (vs + ...);
     }
 } add;
@@ -37,7 +37,7 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    constexpr T operator()(T lhs, T rhs) const {
+    constexpr T operator()(T lhs, T rhs) const noexcept {
         return lhs - rhs;
     }
 } sub;
@@ -47,7 +47,7 @@ constexpr struct {
  */
 constexpr struct {
     template <typename... Ts>
-    constexpr auto operator()(Ts... vs) const {
+    constexpr auto operator()(Ts... vs) const noexcept {
         return (vs * ...);
     }
 } mul;
@@ -57,7 +57,7 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    constexpr T operator()(T lhs, T rhs) const {
+    constexpr T operator()(T lhs, T rhs) const noexcept {
         return lhs / rhs;
     }
 } div;
@@ -68,7 +68,7 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    constexpr T operator()(T rhs) const {
+    constexpr T operator()(T rhs) const noexcept {
         return - rhs;
     }
 } opp;
@@ -78,7 +78,7 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    constexpr T operator()(T lhs, T rhs) const {
+    constexpr T operator()(T lhs, T rhs) const noexcept {
         return lhs << rhs;
     }
 } lshift;
@@ -88,7 +88,7 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    constexpr T operator()(T lhs, T rhs) const {
+    constexpr T operator()(T lhs, T rhs) const noexcept {
         return lhs >> rhs;
     }
 } rshift;
@@ -99,7 +99,7 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    constexpr T operator()(T v) const {
+    constexpr T operator()(T v) const noexcept {
         return (T{0L} < v) - (v < T{0L});
     }
 } sgn;
@@ -109,12 +109,12 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value) const {
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value) const noexcept {
         return std::trunc(value);
     }
 
     template <typename T>
-    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value) const {
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value) const noexcept {
         return value;
     }
 } trunc;
@@ -124,13 +124,13 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T lhs, T rhs) const {
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T lhs, T rhs) const noexcept {
         return std::remainder(lhs, rhs);
         //return lhs - trunc(lhs / rhs) * rhs;
     }
 
     template <typename T>
-    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T lhs, T rhs) const {
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T lhs, T rhs) const noexcept {
         return lhs % rhs;
     }
 } mod;
@@ -140,13 +140,13 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value) const {
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value) const noexcept {
         return std::round(value);
         //return trunc(value + T{0.5L} * sgn(value));
     }
 
     template <typename T>
-    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value) const {
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value) const noexcept {
         return value;
     }
 } round;
@@ -158,25 +158,25 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value) const {
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value) const noexcept {
         return std::floor(value);
         //T remainder = value - trunc(value);
         //return value - remainder - (remainder < T{0L} ? T{1L} : T{0L});
     }
 
     template <typename T>
-    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value) const {
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value) const noexcept {
         return value;
     }
 
     template <typename T>
-    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value, T significance) const {
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value, T significance) const noexcept {
         T remainder = mod(value, significance);
         return value - remainder - (remainder < T{0L} ? significance : T{0L});
     }
 
     template <typename T>
-    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value, T significance) const {
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value, T significance) const noexcept {
 #if 0
         T remainder = mod(value, significance);
         return value - remainder - (remainder < T{0L} ? significance : T{0L});
@@ -194,25 +194,25 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value) const {
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value) const noexcept {
         return std::ceil(value);
         //T remainder = value - trunc(value);
         //return value - remainder + (remainder > T{0L} ? T{1L} : T{0L});
     }
 
     template <typename T>
-    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value) const {
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value) const noexcept {
         return value;
     }
 
     template <typename T>
-    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value, T significance) const {
+    /*constexpr*/ eif<std::is_floating_point<T>::value, T> operator()(T value, T significance) const noexcept {
         T remainder = mod(value, significance);
         return value - remainder + (remainder > T{0L} ? significance : T{0L});
     }
 
     template <typename T>
-    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value, T significance) const {
+    constexpr eif< ! std::is_floating_point<T>::value, T> operator()(T value, T significance) const noexcept {
 #if 0
         T remainder = mod(value, significance);
         return value - remainder + (remainder > T{0L} ? significance : T{0L});
@@ -228,12 +228,12 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    /*constexpr*/ eif< ! std::is_unsigned<T>::value, T> operator()(T value) const {
+    /*constexpr*/ eif< ! std::is_unsigned<T>::value, T> operator()(T value) const noexcept {
         return std::abs(value);
     }
 
     template <typename T>
-    constexpr eif<std::is_unsigned<T>::value, T> operator()(T value) const {
+    constexpr eif<std::is_unsigned<T>::value, T> operator()(T value) const noexcept {
         return value;
     }
 } abs;
@@ -243,12 +243,12 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    constexpr const T& operator()(const T& f) const {
+    constexpr const T& operator()(const T& f) const noexcept {
         return f;
     }
 
     template <typename T, typename... Rs>
-    constexpr const T& operator()(const T& f, const T& s, const Rs&... rs) const {
+    constexpr const T& operator()(const T& f, const T& s, const Rs&... rs) const noexcept {
         return (*this)(s < f ? s : f, rs...);;
     }
 } min;
@@ -258,12 +258,12 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    constexpr const T& operator()(const T& f) const {
+    constexpr const T& operator()(const T& f) const noexcept {
         return f;
     }
 
     template <typename T, typename... Rs>
-    constexpr const T& operator()(const T& f, const T& s, const Rs&... rs) const {
+    constexpr const T& operator()(const T& f, const T& s, const Rs&... rs) const noexcept {
         return (*this)(f < s ? s : f, rs...);
     }
 } max;
@@ -273,7 +273,7 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    constexpr const T& operator()(const T& v, const T& lo, const T& hi) const {
+    constexpr const T& operator()(const T& v, const T& lo, const T& hi) const noexcept {
         return lo < v ? hi < v ? hi : v : lo;
     }
 } clamp;
@@ -283,7 +283,7 @@ constexpr struct {
  */
 constexpr struct {
     template <typename T>
-    constexpr T operator()(T v1, T v2, T weight) const {
+    constexpr T operator()(T v1, T v2, T weight) const noexcept {
         // Precise method which guarantees result is v2 when weight is 1.
         return v1 * (T{1L} - weight) + v2 * weight;
 

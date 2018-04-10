@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 Gauthier ARNOULD
+ * Copyright (c) 2017-2018 Gauthier ARNOULD
  * This file is released under the zlib License (Zlib).
  * See file LICENSE or go to https://opensource.org/licenses/Zlib
  * for full license details.
@@ -10,6 +10,8 @@
 #include <cstddef>
 #include <iostream>
 #include <typeinfo>
+
+#include <ee_utils/componentwise.hpp>
 
 #include "vec.hpp"
 
@@ -160,4 +162,17 @@ std::ostream& operator<<(std::ostream& output, const mat<T, R, C>& m) {
 }
 
 } // namespace math
+
+template <typename VT, typename T, std::size_t R, std::size_t C>
+struct but<math::mat<T, R, C>, VT> {
+    using type = math::mat<VT, R, C>;
+};
+
 } // namespace ee
+
+namespace std {
+
+template <typename T, size_t R, size_t C>
+class tuple_size<::ee::math::mat<T, R, C>> : public integral_constant<size_t, R * C> {};
+
+} // namespace std

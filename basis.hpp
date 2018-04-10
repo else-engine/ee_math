@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 Gauthier ARNOULD
+ * Copyright (c) 2017-2018 Gauthier ARNOULD
  * This file is released under the zlib License (Zlib).
  * See file LICENSE or go to https://opensource.org/licenses/Zlib
  * for full license details.
@@ -29,48 +29,30 @@ struct xpos {
     constexpr static vec<T, 3> v { T{1L}, T{0L}, T{0L} };
 };
 
-template <typename T>
-constexpr vec<T, 3> xpos::v;
-
 struct ypos {
     template <typename T>
     constexpr static vec<T, 3> v { T{0L}, T{1L}, T{0L} };
 };
-
-template <typename T>
-constexpr vec<T, 3> ypos::v;
 
 struct zpos {
     template <typename T>
     constexpr static vec<T, 3> v { T{0L}, T{0L}, T{1L} };
 };
 
-template <typename T>
-constexpr vec<T, 3> zpos::v;
-
 struct xneg {
     template <typename T>
     constexpr static vec<T, 3> v { T{ - 1L}, T{0L}, T{0L} };
 };
-
-template <typename T>
-constexpr vec<T, 3> xneg::v;
 
 struct yneg {
     template <typename T>
     constexpr static vec<T, 3> v { T{0L}, T{ - 1L}, T{0L} };
 };
 
-template <typename T>
-constexpr vec<T, 3> yneg::v;
-
 struct zneg {
     template <typename T>
     constexpr static vec<T, 3> v { T{0L}, T{0L}, T{ - 1L} };
 };
-
-template <typename T>
-constexpr vec<T, 3> zneg::v;
 
 /**
  * Describe the basis formed by the (I, J, K) triplet.

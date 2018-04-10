@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 Gauthier ARNOULD
+ * Copyright (c) 2017-2018 Gauthier ARNOULD
  * This file is released under the zlib License (Zlib).
  * See file LICENSE or go to https://opensource.org/licenses/Zlib
  * for full license details.
@@ -8,6 +8,8 @@
 #pragma once
 
 #include <iostream>
+
+#include <ee_utils/componentwise.hpp>
 
 #include "vec.hpp"
 
@@ -86,4 +88,17 @@ std::ostream& operator<<(std::ostream& output, const quat<T>& q) {
 }
 
 } // namespace math
+
+template <typename VT, typename T>
+struct but<math::quat<T>, VT> {
+    using type = math::quat<VT>;
+};
+
 } // namespace ee
+
+namespace std {
+
+template <typename T>
+class tuple_size<::ee::math::quat<T>> : public integral_constant<size_t, 4u> {};
+
+} // namespace std
